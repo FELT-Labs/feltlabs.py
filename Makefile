@@ -1,4 +1,4 @@
-.PHONY: help install install-node lint clean client
+.PHONY: help install lint clean
 
 # You can specify exact version of python3 or venv name as environment variable
 PYTHON_VERSION?=python3.9
@@ -34,7 +34,7 @@ venv: $(VENV_NAME)/bin/activate
 $(VENV_NAME)/bin/activate: requirements.txt
 	test -d $(VENV_NAME) || $(PYTHON_VERSION) -m virtualenv -p $(PYTHON_VERSION) $(VENV_NAME)
 	${PYTHON} -m pip install -U pip
-	${PYTHON} -m pip install -r requirements.txt
+	${PYTHON} -m pip install -r requirements.txt -r requirements-dev.txt
 	touch $(VENV_NAME)/bin/activate
 
 clean:

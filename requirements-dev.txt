@@ -1,0 +1,9 @@
+# Linting and code style
+black==22.1.0
+flake8==4.0.1
+isort==5.10.1
+pre-commit==2.17.0
+
+# Build and publish
+wheel
+twine
