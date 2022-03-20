@@ -20,7 +20,7 @@ def get_models_params(models):
         try:
             for model in models:
                 params[param].append(getattr(model, param))
-        except:
+        except Exception:
             params.pop(param, None)
 
     return params

@@ -110,7 +110,7 @@ def execute_rounds(X, y, model, plan, plan_dir, secret, account, project_contrac
         model.fit(X, y)
 
         # 3. Encrypt the model
-        model_path = round_dir / f"node_model.joblib"
+        model_path = round_dir / "node_model.joblib"
         cid = upload_encrypted_model(model, model_path, secret)
 
         # 5. Send model to the contract (current round)

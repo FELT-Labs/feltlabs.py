@@ -42,4 +42,4 @@ clean:
 	rm -rf $(VENV_NAME) *.eggs *.egg-info dist build docs/_build .cache
 
 lint: venv
-	${PYTHON} -m flake8 src scripts tests
+	${PYTHON} -m flake8 feltoken

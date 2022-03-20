@@ -13,6 +13,7 @@ from urllib import request
 
 from setuptools import find_packages, setup
 
+PATH = Path(__file__).parent.absolute()
 DOCLINES = (__doc__ or "").split("\n")
 
 CLASSIFIERS = """\
@@ -28,7 +29,7 @@ Topic :: Scientific/Engineering
 """
 
 # Download project contract artifacts
-artifacts = Path(__file__).parent.absolute() / "feltoken/artifacts"
+artifacts = PATH / "feltoken/artifacts"
 artifacts.mkdir(parents=True, exist_ok=True)
 
 remote_url = "https://raw.githubusercontent.com/FELToken/smart-contracts/main/build/deployments/ProjectContract.json"
@@ -56,7 +57,7 @@ def parse_requirements(file_name):
     return requirements
 
 
-requirements = parse_requirements("requirements.txt")
+requirements = parse_requirements(PATH / "requirements.txt")
 
 
 setup(
@@ -67,6 +68,7 @@ setup(
     maintainer_email="info@bretahajek.com",
     description=DOCLINES[0],
     long_description="\n".join(DOCLINES[2:]),
+    long_description_content_type="text/markdown",
     keywords=["Federated Learning", "Web3", "Machine Learning"],
     url="https://feltoken.ai/",
     author="FELToken",
