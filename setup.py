@@ -1,11 +1,13 @@
-"""FELToken python pockage is intended for running data provider code.
+"""FELToken python package intended for running data provider code.
 
 This code connects to the specified smart contract and trains the specified
-models on data.
+models on provided data.
 
 Entry command:
 
+```bash
 felt-node-worker --chain <80001> --contract <address> --account main --data <data_path.csv>
+```
 """
 import re
 from pathlib import Path
@@ -73,9 +75,9 @@ setup(
     url="https://feltoken.ai/",
     author="FELToken",
     project_urls={
-        "Bug Tracker": "https://github.com/FELToken/federated-learning-token/issues",
+        "Bug Tracker": "https://github.com/FELToken/feltoken.py/issues",
         "Documentation": "https://docs.feltoken.ai/",
-        "Source Code": "https://github.com/FELToken/federated-learning-token",
+        "Source Code": "https://github.com/FELToken/feltoken.py",
     },
     license="GPL-3.0 License",
     classifiers=[_f for _f in CLASSIFIERS.split("\n") if _f],
