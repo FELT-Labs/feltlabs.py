@@ -5,15 +5,22 @@ from getpass import getpass
 from io import BytesIO
 from pathlib import Path
 
-import joblib
 import numpy as np
 from brownie import accounts
 from dotenv import load_dotenv
+from sklearn import datasets
+
 from feltoken.core.average import average_models
 from feltoken.core.contracts import to_dict
 from feltoken.core.data import load_data
 from feltoken.core.node import check_node_state, get_node, get_node_secret
-from feltoken.core.storage import ipfs_download_file, ipfs_upload_file
+from feltoken.core.storage import (
+    export_model,
+    ipfs_download_file,
+    ipfs_upload_file,
+    load_model,
+    model_to_bytes,
+)
 from feltoken.core.web3 import (
     encrypt_bytes,
     encrypt_nacl,
@@ -21,7 +28,7 @@ from feltoken.core.web3 import (
     get_project_contract,
     get_web3,
 )
-from sklearn import datasets
+from feltoken.node.training import train_model
 
 # Load dotenv at the beginning of the program
 load_dotenv()
@@ -56,13 +63,11 @@ def upload_final_model(model, model_path, builder_key):
     Returns:
         (str): CID of uploaded file.
     """
-    # TODO: Optimize this part, so we don't need to r/w, json.dump to memory?
-    joblib.dump(model, model_path)
-    with open(model_path, "rb") as f:
-        # TODO: Right now only builder will be able to decrypt model
-        #       Maybe upload extra finall model for nodes??
-        #       Or use secret such that all nodes can calculate it (emph key?)
-        encrypted_model = encrypt_nacl(builder_key, f.read())
+    model_bytes = model_to_bytes(model, model_path)
+    # TODO: Right now only builder will be able to decrypt model
+    #       Maybe upload extra finall model for nodes??
+    #       Or use secret such that all nodes can calculate it (emph key?)
+    encrypted_model = encrypt_nacl(builder_key, model_bytes)
 
     # 4. Upload file to IPFS
     res = ipfs_upload_file(BytesIO(encrypted_model))
@@ -80,17 +85,15 @@ def upload_encrypted_model(model, model_path, secret):
     Returns:
         (str): CID of uploaded file.
     """
-    # TODO: Optimize this part, so we don't need to r/w, json.dump to memory?
-    joblib.dump(model, model_path)
-    with open(model_path, "rb") as f:
-        encrypted_model = encrypt_bytes(f.read(), secret)
+    model_bytes = model_to_bytes(model, model_path)
+    encrypted_model = encrypt_bytes(model_bytes, secret)
 
     # 4. Upload file to IPFS
     res = ipfs_upload_file(BytesIO(encrypted_model))
     return res.json()["cid"]
 
 
-def execute_rounds(X, y, model, plan, plan_dir, secret, account, project_contract, w3):
+def execute_rounds(data, model, plan, plan_dir, secret, account, project_contract, w3):
     """Perform training rounds according to the training plan.
 
     Args:
@@ -107,7 +110,7 @@ def execute_rounds(X, y, model, plan, plan_dir, secret, account, project_contrac
 
         # 2. Execute training
         print("Training")
-        model.fit(X, y)
+        train_model(model, data)
 
         # 3. Encrypt the model
         model_path = round_dir / "node_model.joblib"
@@ -144,7 +147,7 @@ def execute_rounds(X, y, model, plan, plan_dir, secret, account, project_contrac
 
                 m_path = round_dir / f"model_node_{node_idx}.joblib"
                 ipfs_download_file(cid, m_path, secret)
-                models.append(joblib.load(m_path))
+                models.append(load_model(m_path))
                 downloaded.add(node_idx)
 
         print("Averaging models.", len(models))
@@ -164,7 +167,7 @@ def watch_for_plan(project_contract):
         time.sleep(3)
 
 
-def task(key, chain_id, contract_address, X, y):
+def task(key, chain_id, contract_address, data):
     account = accounts.add(key)
     w3 = get_web3(account, chain_id)
     print("Worker connected to chain id: ", w3.eth.chain_id)
@@ -195,14 +198,22 @@ def task(key, chain_id, contract_address, X, y):
         # 1. Download model by CID
         base_model_path = plan_dir / "base_model.joblib"
         ipfs_download_file(plan["baseModelCID"], output_path=base_model_path)
-        model = joblib.load(base_model_path)
+        model = load_model(base_model_path)
 
         final_model = execute_rounds(
-            X, y, model, plan, plan_dir, secret, account, project_contract, w3
+            data[0],
+            data[1],
+            model,
+            plan,
+            plan_dir,
+            secret,
+            account,
+            project_contract,
+            w3,
         )
         print("Creating final model.")
         final_model_path = plan_dir / "final_model.joblib"
-        joblib.dump(model, final_model_path)
+        export_model(model, final_model_path)
 
         # 8. Upload final model if coordinator
         if plan["finalNode"] == account.address:
@@ -279,17 +290,7 @@ def main(args_str=None):
         print(f"Invalid parameters:\n{e}")
         return
 
-    if args.data == "test":
-        # Demo data for testing
-        X, y = datasets.load_diabetes(return_X_y=True)
-        subset = np.random.choice(X.shape[0], 100, replace=False)
-        X, y = X[subset], y[subset]
-    else:
-        try:
-            X, y = load_data(args.data)
-        except Exception as e:
-            print(f"Unable to load {args.data}\n{e}")
-            return
+    data = load_data(args.data)
 
     # Check for valid key and valid web3 token
     if not key:
@@ -300,7 +301,7 @@ def main(args_str=None):
             "Please input your web3.storage API token:"
         )
 
-    task(key, args.chain, args.contract, X, y)
+    task(key, args.chain, args.contract, data)
 
 
 if __name__ == "__main__":

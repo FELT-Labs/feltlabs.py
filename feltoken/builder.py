@@ -2,6 +2,7 @@
 from pathlib import Path
 
 import joblib
+
 from feltoken.core.storage import ipfs_upload_file
 
 
