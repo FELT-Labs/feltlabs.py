@@ -6,3 +6,10 @@ PyNaCl==1.5.0
 python-dotenv==0.16.0
 scikit-learn==1.0.1
 web3==5.27.0
+
+# Ocean integration
+ocean-lib==0.5.0
+# Fileprovider
+fastapi==0.75.0
+uvicorn
+python-multipart
