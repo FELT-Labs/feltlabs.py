@@ -1,54 +1,58 @@
-from ocean_lib.common.agreements.service_types import ServiceTypes
+from pathlib import Path
+
+from ocean_lib.assets.asset_resolver import resolve_asset
 from ocean_lib.data_provider.data_service_provider import DataServiceProvider
 from ocean_lib.example_config import ExampleConfig
 from ocean_lib.models.compute_input import ComputeInput
 from ocean_lib.ocean.ocean import Ocean
-from ocean_lib.services.service import Service
 from ocean_lib.web3_internal.constants import ZERO_ADDRESS
-from ocean_lib.web3_internal.currency import to_wei
+from ocean_lib.web3_internal.wallet import Wallet
 
-from feltoken.ocean.algorithm import alg_metadata, get_attributes
+LOGS = Path(__file__).parent
+LOGS.mkdir(exist_ok=True)
+
+OCEAN = None
 
 
 def get_ocean():
-    config = ExampleConfig.get_config()
-    ocean = Ocean(config)
-    provider_url = DataServiceProvider.get_url(ocean.config)
-    return (ocean, provider_url)
+    global OCEAN
+    if not OCEAN:
+        config = ExampleConfig.get_config()
+        OCEAN = Ocean(config)
+    provider_url = DataServiceProvider.get_url(OCEAN.config)
+    return (OCEAN, provider_url)
 
 
-def publish_algorithm(wallet):
-    ocean, provider_url = get_ocean()
-    # Publish alg datatoken
-    alg_datatoken = ocean.create_data_token(
-        "alg1", "alg1", wallet, blob=ocean.config.metadata_cache_uri
-    )
-    alg_datatoken.mint(wallet.address, to_wei(100), wallet)
-    print(f"alg_datatoken.address = '{alg_datatoken.address}'")
-
-    # Calc alg service access descriptor. We use the same service provider as data
-    alg_access_service = Service(
-        service_endpoint=provider_url,
-        service_type=ServiceTypes.CLOUD_COMPUTE,
-        attributes=get_attributes(wallet.address),
+def get_wallet(private_key):
+    ocean, _ = get_ocean()
+    return Wallet(
+        ocean.web3,
+        private_key,
+        ocean.config.block_confirmations,
+        ocean.config.transaction_timeout,
     )
 
-    # Publish metadata and service info on-chain
-    alg_ddo = ocean.assets.create(
-        metadata=alg_metadata,
-        publisher_wallet=wallet,
-        services=[alg_access_service],
-        data_token_address=alg_datatoken.address,
-    )
-    print(f"alg did = '{alg_ddo.did}'")
+
+def resolve_did(did):
+    ocean, _ = get_ocean()
+    return resolve_asset(did, metadata_cache_uri=ocean.config.metadata_cache_uri)
+
+
+def get_algorithm(algorithm_did):
+    """Get already deployed algorithm or publish new."""
+    ocean, _ = get_ocean()
+    # Load algorithm DDO or publish alg
+    alg_ddo = resolve_did(algorithm_did)
+    alg_datatoken = ocean.get_data_token(alg_ddo.dataToken)
     return alg_ddo, alg_datatoken
 
 
-def start_job(data_did, alg_did, alg_datatoken, wallet, model_id):
-    ocean, provider_url = get_ocean()
+def start_job(data_did, alg_did, wallet, model_id):
+    ocean, _ = get_ocean()
     # make sure we operate on the updated and indexed metadata_cache_uri versions
     data_ddo = ocean.assets.resolve(data_did)
     alg_ddo = ocean.assets.resolve(alg_did)
+    alg_datatoken = ocean.get_data_token(alg_ddo.dataToken)
 
     compute_service = data_ddo.get_service("compute")
     algo_service = alg_ddo.get_service("access")

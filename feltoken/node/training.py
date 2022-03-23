@@ -3,10 +3,15 @@ import argparse
 
 from feltoken.core.data import load_data
 from feltoken.core.storage import export_model, load_model
+from feltoken.ocean.training import ocean_train_model
 
 
-def train_model(model, data):
-    model.fit(data[0], data[1])
+def train_model(model, data, config):
+    if config.ocean:
+        model = ocean_train_model(model, None, config)
+    else:
+        model.fit(data[0], data[1])
+    return model
 
 
 def parse_args(args_str=None):
@@ -34,6 +39,12 @@ def parse_args(args_str=None):
         help="Path to CSV file with data. Last column is considered as Y.",
     )
     parser.add_argument(
+        "--ocean",
+        type=bool,
+        action="store_true",
+        help="Indicates if the dataset is compute-to-data dataset on ocean.",
+    )
+    parser.add_argument(
         "--output_path",
         type=int,
         help="Path to store the final model file.",
@@ -50,7 +61,7 @@ def main():
 
     data = load_data(args.data)
 
-    model = train_model(model, data)
+    model = train_model(model, data, args)
     export_model(model, args.output_path)
 
 

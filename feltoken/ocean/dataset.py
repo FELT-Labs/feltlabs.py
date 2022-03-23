@@ -1,10 +1,22 @@
-"""Module for publishing demo dataset."""
+"""Module for publishing demo dataset.
+
+This is mainly for demonstration purposes, so we know how to use ocean
+and for testing the compute to data.
+
+It publishes demo dataset using PRIVATE_KEY variable from .env
+
+Run:
+    python dataset.py
+"""
+import os
+
+from dotenv import load_dotenv
 from ocean_lib.common.agreements.service_types import ServiceTypes
 from ocean_lib.services.service import Service
 from ocean_lib.web3_internal.currency import to_wei
 from ocean_lib.web3_internal.wallet import Wallet
 
-from feltoken.ocean.ocean import get_ocean
+from feltoken.ocean.ocean import get_ocean, get_wallet
 
 
 def publish_dataset(wallet: Wallet):
@@ -57,3 +69,9 @@ def publish_dataset(wallet: Wallet):
     )
     print(f"data did = '{data_ddo.did}'")
     return data_ddo
+
+
+if __name__ == "__main__":
+    load_dotenv()
+    wallet = get_wallet(os.getenv("PRIVATE_KEY"))
+    publish_dataset(wallet)

@@ -1,14 +1,13 @@
 import argparse
 import os
 import time
+from email.policy import default
 from getpass import getpass
-from io import BytesIO
 from pathlib import Path
 
 import numpy as np
-from brownie import accounts
 from dotenv import load_dotenv
-from sklearn import datasets
+from web3 import Web3
 
 from feltoken.core.average import average_models
 from feltoken.core.contracts import to_dict
@@ -17,17 +16,11 @@ from feltoken.core.node import check_node_state, get_node, get_node_secret
 from feltoken.core.storage import (
     export_model,
     ipfs_download_file,
-    ipfs_upload_file,
     load_model,
-    model_to_bytes,
+    upload_encrypted_model,
+    upload_final_model,
 )
-from feltoken.core.web3 import (
-    encrypt_bytes,
-    encrypt_nacl,
-    get_current_secret,
-    get_project_contract,
-    get_web3,
-)
+from feltoken.core.web3 import get_current_secret, get_project_contract, get_web3
 from feltoken.node.training import train_model
 
 # Load dotenv at the beginning of the program
@@ -52,48 +45,9 @@ def get_plan(project_contract):
     return None
 
 
-def upload_final_model(model, model_path, builder_key):
-    """Encrypt and upload final model for builder to IPFS.
-
-    Args:
-        model: scikit-learn trained model
-        model_path: path to save final model
-        builder_key: public builder key to use for encryption
-
-    Returns:
-        (str): CID of uploaded file.
-    """
-    model_bytes = model_to_bytes(model, model_path)
-    # TODO: Right now only builder will be able to decrypt model
-    #       Maybe upload extra finall model for nodes??
-    #       Or use secret such that all nodes can calculate it (emph key?)
-    encrypted_model = encrypt_nacl(builder_key, model_bytes)
-
-    # 4. Upload file to IPFS
-    res = ipfs_upload_file(BytesIO(encrypted_model))
-    return res.json()["cid"]
-
-
-def upload_encrypted_model(model, model_path, secret):
-    """Encrypt and upload model to IPFS.
-
-    Args:
-        model: scikit-learn trained model
-        model_path: path to save final model
-        secret: secret key for encryption
-
-    Returns:
-        (str): CID of uploaded file.
-    """
-    model_bytes = model_to_bytes(model, model_path)
-    encrypted_model = encrypt_bytes(model_bytes, secret)
-
-    # 4. Upload file to IPFS
-    res = ipfs_upload_file(BytesIO(encrypted_model))
-    return res.json()["cid"]
-
-
-def execute_rounds(data, model, plan, plan_dir, secret, account, project_contract, w3):
+def execute_rounds(
+    data, model, plan, plan_dir, secret, account, project_contract, w3, config
+):
     """Perform training rounds according to the training plan.
 
     Args:
@@ -110,7 +64,7 @@ def execute_rounds(data, model, plan, plan_dir, secret, account, project_contrac
 
         # 2. Execute training
         print("Training")
-        train_model(model, data)
+        model = train_model(model, data, config)
 
         # 3. Encrypt the model
         model_path = round_dir / "node_model.joblib"
@@ -118,7 +72,7 @@ def execute_rounds(data, model, plan, plan_dir, secret, account, project_contrac
 
         # 5. Send model to the contract (current round)
         tx = project_contract.functions.submitModel(cid).transact(
-            {"from": account._acct.address, "gasPrice": w3.eth.gas_price}
+            {"from": account.address, "gasPrice": w3.eth.gas_price}
         )
         w3.eth.wait_for_transaction_receipt(tx)
 
@@ -167,12 +121,12 @@ def watch_for_plan(project_contract):
         time.sleep(3)
 
 
-def task(key, chain_id, contract_address, data):
-    account = accounts.add(key)
-    w3 = get_web3(account, chain_id)
+def task(data, config):
+    account = Web3().eth.account.from_key(config.account)
+    w3 = get_web3(account, config.chain)
     print("Worker connected to chain id: ", w3.eth.chain_id)
 
-    project_contract = get_project_contract(w3, contract_address)
+    project_contract = get_project_contract(w3, config.contract)
     if not check_node_state(w3, project_contract, account):
         print("Script stoped.")
         return
@@ -201,8 +155,7 @@ def task(key, chain_id, contract_address, data):
         model = load_model(base_model_path)
 
         final_model = execute_rounds(
-            data[0],
-            data[1],
+            data,
             model,
             plan,
             plan_dir,
@@ -210,6 +163,7 @@ def task(key, chain_id, contract_address, data):
             account,
             project_contract,
             w3,
+            config,
         )
         print("Creating final model.")
         final_model_path = plan_dir / "final_model.joblib"
@@ -228,7 +182,7 @@ def task(key, chain_id, contract_address, data):
             )
 
             tx = project_contract.functions.finishPlan(cid).transact(
-                {"from": account._acct.address, "gasPrice": w3.eth.gas_price}
+                {"from": account.address, "gasPrice": w3.eth.gas_price}
             )
             w3.eth.wait_for_transaction_receipt(tx)
             print("Final model uploaded and encrypted for a builder.")
@@ -266,7 +220,26 @@ def parse_args(args_str=None):
         "--data",
         type=str,
         default="test",
-        help="Path to CSV file with data. Last column is considered as Y.",
+        help=(
+            "Path to CSV file with data. Last column is considered as Y."
+            "Or Ocean protocol dataset DID."
+        ),
+    )
+    # OCEAN protocol related
+    parser.add_argument(
+        "--ocean",
+        type=bool,
+        action="store_true",
+        help="Indicates if the dataset is compute-to-data dataset on ocean.",
+    )
+    parser.add_argument(
+        "--algorithm_did",
+        type=str,
+        default=None,
+        help=(
+            "DID of published algorithm which is allowed for training on data."
+            "Only required if --ocean is set."
+        ),
     )
     args = parser.parse_args(args_str)
 
@@ -276,32 +249,31 @@ def parse_args(args_str=None):
         137,
     ], "Invalid chain id or chain id is not supported (suppoerted: 1337, 137, 80001)"
     assert len(args.contract) == 42, "The contract address has invalid length."
-    assert args.account in KEYS, "Invalid name of an account."
+    assert (
+        not args.ocean or args.algorithm_did
+    ), "algorithm_did must be set if ocean is True."
 
+    args.account = KEYS.get(args.account, None)
     return args
 
 
 def main(args_str=None):
     """Parse arguments and run worker task (watching contract and training models)."""
-    try:
-        args = parse_args(args_str)
-        key = KEYS[args.account]
-    except Exception as e:
-        print(f"Invalid parameters:\n{e}")
-        return
-
-    data = load_data(args.data)
+    config = parse_args(args_str)
+    data = load_data(config.data)
 
     # Check for valid key and valid web3 token
-    if not key:
-        key = getpass("Please provide your private key (exported from MetaMask):")
+    if not config.account:
+        config.account = getpass(
+            "Please provide your private key (exported from MetaMask):"
+        )
 
     if "WEB3_STORAGE_TOKEN" not in os.environ or not os.getenv("WEB3_STORAGE_TOKEN"):
         os.environ["WEB3_STORAGE_TOKEN"] = getpass(
             "Please input your web3.storage API token:"
         )
 
-    task(key, args.chain, args.contract, data)
+    task(data, config)
 
 
 if __name__ == "__main__":

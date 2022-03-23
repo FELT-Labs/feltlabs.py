@@ -5,8 +5,6 @@ from base64 import a85decode, a85encode
 from pathlib import Path
 from urllib import request
 
-from brownie.network.account import LocalAccount
-
 # TODO: Replace the encryption functions with something else?
 from ecies.utils import aes_decrypt, aes_encrypt
 from eth_typing.evm import Address
@@ -28,12 +26,12 @@ CHAIN_ID_MAP = {
 }
 
 
-def get_web3(account: LocalAccount, chain_id: int) -> Web3:
+def get_web3(account, chain_id: int) -> Web3:
     """Get connection to web3."""
     w3 = Web3(Web3.HTTPProvider(CHAIN_ID_MAP[chain_id]))
     w3.eth.set_gas_price_strategy(medium_gas_price_strategy)
-    w3.middleware_onion.add(construct_sign_and_send_raw_middleware(account._acct))
-    w3.eth.default_account = account._acct.address
+    w3.middleware_onion.add(construct_sign_and_send_raw_middleware(account))
+    w3.eth.default_account = account.address
     return w3
 
 

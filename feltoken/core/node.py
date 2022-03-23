@@ -31,7 +31,7 @@ def check_node_isactive(w3, project_contract, account):
         if yes_no_prompt("Do you want to activate the node?", default=False):
             # TODO: Add this once contract updated
             tx = project_contract.functions.activate().transact(
-                {"from": account._acct.address, "gasPrice": w3.eth.gas_price},
+                {"from": account.address, "gasPrice": w3.eth.gas_price},
             )
             w3.eth.wait_for_transaction_receipt(tx)
             print("Node activated.")
@@ -55,7 +55,7 @@ def check_node_state(w3, project_contract, account):
 
     Args:
         project_contract (Contract): project contract instance
-        account (Account): brownie account instance
+        account (Account): web3 account instance
 
     Returns:
         (bool): True if account can participate as data provider in project
@@ -68,7 +68,7 @@ def check_node_state(w3, project_contract, account):
             if yes_no_prompt("Do you want to join the project?", default=False):
                 public_key = export_public_key(account.private_key[2:])
                 tx = project_contract.functions.requestJoinNode(public_key).transact(
-                    {"from": account._acct.address, "gasPrice": w3.eth.gas_price},
+                    {"from": account.address, "gasPrice": w3.eth.gas_price},
                 )
                 w3.eth.wait_for_transaction_receipt(tx)
                 print("Request to join sent. Waiting to be accepted.")

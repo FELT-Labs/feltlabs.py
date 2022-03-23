@@ -1,11 +1,12 @@
 """Module for storing and managing data files at IPFS/Filecoin using web3.storage."""
 import os
 import time
+from io import BytesIO
 
 import httpx
 import joblib
 
-from feltoken.core.web3 import decrypt_bytes
+from feltoken.core.web3 import decrypt_bytes, encrypt_bytes, encrypt_nacl
 
 
 def load_model(filename):
@@ -86,3 +87,44 @@ def ipfs_download_file(cid, output_path=None, secret=None):
             f.write(content)
 
     return content
+
+
+def upload_final_model(model, model_path, builder_key):
+    """Encrypt and upload final model for builder to IPFS.
+
+    Args:
+        model: scikit-learn trained model
+        model_path: path to save final model
+        builder_key: public builder key to use for encryption
+
+    Returns:
+        (str): CID of uploaded file.
+    """
+    model_bytes = model_to_bytes(model, model_path)
+    # TODO: Right now only builder will be able to decrypt model
+    #       Maybe upload extra finall model for nodes??
+    #       Or use secret such that all nodes can calculate it (emph key?)
+    encrypted_model = encrypt_nacl(builder_key, model_bytes)
+
+    # 4. Upload file to IPFS
+    res = ipfs_upload_file(BytesIO(encrypted_model))
+    return res.json()["cid"]
+
+
+def upload_encrypted_model(model, model_path, secret):
+    """Encrypt and upload model to IPFS.
+
+    Args:
+        model: scikit-learn trained model
+        model_path: path to save final model
+        secret: secret key for encryption
+
+    Returns:
+        (str): CID of uploaded file.
+    """
+    model_bytes = model_to_bytes(model, model_path)
+    encrypted_model = encrypt_bytes(model_bytes, secret)
+
+    # 4. Upload file to IPFS
+    res = ipfs_upload_file(BytesIO(encrypted_model))
+    return res.json()["cid"]
