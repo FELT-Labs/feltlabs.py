@@ -43,7 +43,7 @@ def get_algorithm(algorithm_did):
     ocean, _ = get_ocean()
     # Load algorithm DDO or publish alg
     alg_ddo = resolve_did(algorithm_did)
-    alg_datatoken = ocean.get_data_token(alg_ddo.dataToken)
+    alg_datatoken = ocean.get_data_token(alg_ddo.data_token_address)
     return alg_ddo, alg_datatoken
 
 
@@ -52,7 +52,7 @@ def start_job(data_did, alg_did, wallet, model_id):
     # make sure we operate on the updated and indexed metadata_cache_uri versions
     data_ddo = ocean.assets.resolve(data_did)
     alg_ddo = ocean.assets.resolve(alg_did)
-    alg_datatoken = ocean.get_data_token(alg_ddo.dataToken)
+    alg_datatoken = ocean.get_data_token(alg_ddo.data_token_address)
 
     compute_service = data_ddo.get_service("compute")
     algo_service = alg_ddo.get_service("access")

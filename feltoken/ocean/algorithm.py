@@ -30,7 +30,7 @@ def get_metadata(file_provider_url: str):
                 "format": "docker-image",
                 "version": "0.1",
                 "container": {
-                    "entrypoint": "python -m pip install git+https://github.com/FELToken/feltoken.py/tree/ocean-integration; feltoken-train --model $ALGO --data test --output_model /data/outputs/result",
+                    "entrypoint": "python -m pip install git+https://github.com/FELToken/feltoken.py@ocean-integration && feltoken-train --ocean --model $ALGO --data test --output_model /data/outputs/result",
                     "image": "oceanprotocol/algo_dockers",
                     "tag": "python-branin",
                 },

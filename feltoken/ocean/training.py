@@ -7,18 +7,13 @@ from sklearn.linear_model import LinearRegression
 
 from feltoken.core.storage import load_model, model_to_bytes
 from feltoken.ocean.files import upload_model
-from feltoken.ocean.ocean import (
-    allow_algorithm,
-    get_algorithm,
-    get_ocean,
-    get_wallet,
-    start_job,
-)
+from feltoken.ocean.ocean import get_ocean, get_wallet, start_job
 
 
 def ocean_train_model(model, data_did, config):
     ocean, _ = get_ocean()
     wallet = get_wallet(config.account)
+    print(data_did)
 
     # Get some random id
     model_id = base64.b64encode(os.urandom(16)).decode("ascii")
@@ -30,7 +25,7 @@ def ocean_train_model(model, data_did, config):
 
     # Monitor alg status until finished
     status = None
-    for i in range(10):
+    for i in range(20):
         status = ocean.compute.status(data_did, job_id, wallet)
         print("Status", status)
         if status["status"] == 70:
@@ -40,6 +35,8 @@ def ocean_train_model(model, data_did, config):
     assert status and status["status"] == 70, f"Training job didn't finish: {status}"
 
     result = ocean.compute.result_file(data_did, job_id, 0, wallet)
+    print(result)
+    print(BytesIO(result))
     return load_model(BytesIO(result))
 
 

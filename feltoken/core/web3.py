@@ -54,16 +54,16 @@ def _hex_to_bytes(hex: str) -> bytes:
     return bytes.fromhex(hex[2:] if hex[:2] == "0x" else hex)
 
 
-def export_public_key(private_key_hex: str) -> bytes:
+def export_public_key(private_key: bytes) -> bytes:
     """Export public key for contract join request.
 
     Args:
-        private_key: hex string representing private key
+        private_key: bytes representing private key
 
     Returns:
         32 bytes representing public key
     """
-    return bytes(PrivateKey(_hex_to_bytes(private_key_hex)).public_key)
+    return bytes(PrivateKey(private_key).public_key)
 
 
 def encrypt_nacl(public_key: bytes, data: bytes) -> bytes:

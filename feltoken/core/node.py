@@ -19,8 +19,7 @@ def get_node(project_contract, account):
 def get_node_secret(project_contract, account):
     """Get shared secret for node represented by account."""
     secret = b"".join(project_contract.functions.getNodeSecret(account.address).call())
-    private_key = bytes.fromhex(account.private_key[2:])
-    return decrypt_nacl(private_key, secret)
+    return decrypt_nacl(account.key, secret)
 
 
 def check_node_isactive(w3, project_contract, account):
@@ -66,7 +65,7 @@ def check_node_state(w3, project_contract, account):
             # Request join as data provider
             print("You haven't requested access to project yet.")
             if yes_no_prompt("Do you want to join the project?", default=False):
-                public_key = export_public_key(account.private_key[2:])
+                public_key = export_public_key(account.key)
                 tx = project_contract.functions.requestJoinNode(public_key).transact(
                     {"from": account.address, "gasPrice": w3.eth.gas_price},
                 )

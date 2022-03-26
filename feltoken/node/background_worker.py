@@ -228,7 +228,6 @@ def parse_args(args_str=None):
     # OCEAN protocol related
     parser.add_argument(
         "--ocean",
-        type=bool,
         action="store_true",
         help="Indicates if the dataset is compute-to-data dataset on ocean.",
     )
@@ -260,7 +259,7 @@ def parse_args(args_str=None):
 def main(args_str=None):
     """Parse arguments and run worker task (watching contract and training models)."""
     config = parse_args(args_str)
-    data = load_data(config.data)
+    data = load_data(config)
 
     # Check for valid key and valid web3 token
     if not config.account:

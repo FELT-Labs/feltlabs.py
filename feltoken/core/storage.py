@@ -53,12 +53,17 @@ def ipfs_upload_file(file):
         Response: httpx response object
     """
     # TODO: Check for upload error
-    return httpx.post(
-        "https://api.web3.storage/upload",
-        headers={"Authorization": "Bearer " + os.environ["WEB3_STORAGE_TOKEN"]},
-        files={"file": file},
-        timeout=None,
-    )
+    for _ in range(3):
+        try:
+            return httpx.post(
+                "https://api.web3.storage/upload",
+                headers={"Authorization": "Bearer " + os.environ["WEB3_STORAGE_TOKEN"]},
+                files={"file": file},
+                timeout=None,
+            )
+        except (httpx.ReadTimeout, httpx.ConnectError):
+            print("Upload error - retry")
+            time.sleep(5)
 
 
 def ipfs_download_file(cid, output_path=None, secret=None):
@@ -73,8 +78,8 @@ def ipfs_download_file(cid, output_path=None, secret=None):
     """
     for _ in range(5):
         try:
-            res = httpx.get(f"https://{cid}.ipfs.dweb.link/", timeout=10.0)
-        except httpx.ReadTimeout:
+            res = httpx.get(f"https://ipfs.io/ipfs/{cid}", timeout=30.0)
+        except (httpx.ReadTimeout, httpx.ConnectError):
             print("Connection timeout - retry")
             time.sleep(5)
 

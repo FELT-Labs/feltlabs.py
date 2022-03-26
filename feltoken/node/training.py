@@ -8,7 +8,7 @@ from feltoken.ocean.training import ocean_train_model
 
 def train_model(model, data, config):
     if config.ocean:
-        model = ocean_train_model(model, None, config)
+        model = ocean_train_model(model, data, config)
     else:
         model.fit(data[0], data[1])
     return model
@@ -40,7 +40,6 @@ def parse_args(args_str=None):
     )
     parser.add_argument(
         "--ocean",
-        type=bool,
         action="store_true",
         help="Indicates if the dataset is compute-to-data dataset on ocean.",
     )
