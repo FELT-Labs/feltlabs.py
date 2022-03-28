@@ -16,5 +16,12 @@ def upload_model(_id: str, model_bytes: bytes) -> bool:
     """
     url = f"{os.getenv('FILE_PROVIDER_URL')}/upload_model?_id={_id}"
     files = {"file": BytesIO(model_bytes)}
-    r = requests.post(url, files=files)
-    return r.json()["Status"] == "OK"
+    for _ in range(5):
+        try:
+            r = requests.post(
+                url,
+                files=files,
+            )
+            return r.json()["Status"] == "OK"
+        except requests.exceptions.ConnectionError:
+            print("Connection error - retry")

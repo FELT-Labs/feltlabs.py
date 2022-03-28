@@ -29,7 +29,7 @@ def parse_args(args_str=None):
     )
     parser.add_argument(
         "--model",
-        type=int,
+        type=str,
         help="Path to model file which should be loaded and trained.",
     )
     parser.add_argument(
