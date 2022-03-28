@@ -44,8 +44,8 @@ def parse_args(args_str=None):
         help="Indicates if the dataset is compute-to-data dataset on ocean.",
     )
     parser.add_argument(
-        "--output_path",
-        type=int,
+        "--output_model",
+        type=str,
         help="Path to store the final model file.",
     )
     args = parser.parse_args(args_str)
