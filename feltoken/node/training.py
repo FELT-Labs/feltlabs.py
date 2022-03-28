@@ -61,7 +61,7 @@ def main():
     data = load_data(args)
 
     model = train_model(model, data, args)
-    export_model(model, args.output_path)
+    export_model(model, args.output_model)
 
 
 if __name__ == "__main__":
