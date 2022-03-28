@@ -58,7 +58,7 @@ def main():
     args = parse_args()
     model = load_model(args.model)
 
-    data = load_data(args.data)
+    data = load_data(args)
 
     model = train_model(model, data, args)
     export_model(model, args.output_path)
