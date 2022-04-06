@@ -1,18 +1,19 @@
 """Model for performing federated averaging of models."""
+from typing import Any
+
 import numpy as np
 
 ATTRIBUTE_LIST = ["coef_", "intercept_", "coefs_", "intercepts_"]
 
 
-def get_models_params(models):
+def _get_models_params(models: list[Any]) -> dict[str, list[np.ndarray]]:
     """Extract trainable parameters from scikit-learn models.
 
     Args:
-        modesl (list[object]): list of scikit-learn models.
+        modesl: list of scikit-learn models.
 
     Returns:
-        (dict[str, list[ndarray]]): dictionary mapping attributes to list of values
-            numpy arrays extracted from models.
+        dictionary mapping attributes to list of values numpy arrays extracted from models.
     """
     params = {}
     for param in ATTRIBUTE_LIST:
@@ -26,34 +27,35 @@ def get_models_params(models):
     return params
 
 
-def set_model_params(model, params):
+def _set_model_params(model: Any, params: dict[str, np.ndarray]):
     """Set new values of trainable params to scikit-learn models.
 
     Args:
-        model (object): scikit-learn model.
-        params (dict[str, ndarray]): dictinary mapping attributes to numpy arrays.
+        model: scikit-learn model.
+        params: dictinary mapping attributes to numpy arrays.
 
     Returns:
-        (object): scikit-learn model with new values.
+        scikit-learn model with new values.
     """
     for param, value in params.items():
         setattr(model, param, value)
     return model
 
 
-def average_models(models):
+def average_models(models: list[Any]) -> Any:
     """Average trainable parameters of scikit-learn models.
 
     Args:
-        models (list[object]): list of scikit-learn models.
+        models: list of scikit-learn models.
 
     Returns:
-        (object): scikit-learn model with new values.
+        scikit-learn model with new values.
     """
-    params = get_models_params(models)
+    params = _get_models_params(models)
+    average_params = {}
     for param, values in params.items():
         val = np.mean(values, axis=0)
-        params[param] = val.astype(values[0].dtype)
+        average_params[param] = val.astype(values[0].dtype)
 
-    model = set_model_params(models[0], params)
+    model = _set_model_params(models[0], average_params)
     return model

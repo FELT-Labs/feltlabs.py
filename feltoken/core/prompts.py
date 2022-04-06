@@ -1,15 +1,15 @@
 """Module for basic interactions with user."""
 
 
-def yes_no_prompt(prompt, default=False):
+def yes_no_prompt(prompt: str, default: bool = False) -> bool:
     """Print yes/no question and check for answer.
 
     Args:
-        prompt (str): yes/no question to ask
-        default (bool): default behavior if answer not matched
+        prompt: yes/no question to ask
+        default: default behavior if answer not matched
 
     Returns:
-        (bool): true if user answered yes, false otherwise
+        true if user answered yes, false otherwise
     """
     x = input(f"{prompt} {'[Y/n]' if default else '[y/N]'}: ")
 

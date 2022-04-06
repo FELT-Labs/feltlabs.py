@@ -36,7 +36,7 @@ structures = {
 }
 
 
-def to_dict(values, struct_name):
+def to_dict(values: list, struct_name: str) -> dict:
     """Map list to dictionary based on the structure from contract."""
     d = {}
     mapping = structures[struct_name]

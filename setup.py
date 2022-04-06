@@ -86,7 +86,10 @@ setup(
     install_requires=requirements,
     zip_safe=False,
     entry_points={
-        "console_scripts": ["felt-node-worker = feltoken.node.background_worker:main"],
+        "console_scripts": [
+            "felt-node-worker = feltoken.node.background_worker:main",
+            "feltoken-train = feltoken.node.training:main",
+        ],
     },
     package_data={
         "feltoken": ["artifacts/*.json", "artifacts/contracts/*.json"],

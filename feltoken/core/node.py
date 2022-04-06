@@ -1,11 +1,15 @@
 import time
 
+from eth_account.signers.local import LocalAccount as Account
+from web3 import Web3
+from web3.contract import Contract
+
 from feltoken.core.contracts import to_dict
 from feltoken.core.prompts import yes_no_prompt
 from feltoken.core.web3 import decrypt_nacl, export_public_key
 
 
-def get_node(project_contract, account):
+def get_node(project_contract: Contract, account: Account) -> dict:
     """Get node data for given account."""
     index = project_contract.functions.nodeState(account.address).call()
     assert (
@@ -16,22 +20,23 @@ def get_node(project_contract, account):
     return to_dict(node, "Node")
 
 
-def get_node_secret(project_contract, account):
+def get_node_secret(project_contract: Contract, account: Account) -> bytes:
     """Get shared secret for node represented by account."""
     secret = b"".join(project_contract.functions.getNodeSecret(account.address).call())
-    private_key = bytes.fromhex(account.private_key[2:])
-    return decrypt_nacl(private_key, secret)
+    return decrypt_nacl(account.key, secret)
 
 
-def check_node_isactive(w3, project_contract, account):
-    """Check if accepted node has active status."""
+def _check_node_isactive(
+    w3: Web3, project_contract: Contract, account: Account
+) -> bool:
+    """Check if accepted node has active status, activate if user allows it."""
     node = get_node(project_contract, account)
     if not node["activated"]:
         print("Node with this account is set as inactive.")
         if yes_no_prompt("Do you want to activate the node?", default=False):
             # TODO: Add this once contract updated
             tx = project_contract.functions.activate().transact(
-                {"from": account._acct.address, "gasPrice": w3.eth.gas_price},
+                {"from": account.address, "gasPrice": w3.eth.gas_price},
             )
             w3.eth.wait_for_transaction_receipt(tx)
             print("Node activated.")
@@ -42,7 +47,7 @@ def check_node_isactive(w3, project_contract, account):
     return True
 
 
-def check_node_state(w3, project_contract, account):
+def check_node_state(w3: Web3, project_contract: Contract, account: Account) -> bool:
     """Check node state depending on a state perform action:
 
     State:
@@ -54,11 +59,11 @@ def check_node_state(w3, project_contract, account):
         3+ - accepted - return True
 
     Args:
-        project_contract (Contract): project contract instance
-        account (Account): brownie account instance
+        project_contract: project contract instance
+        account: web3 account instance
 
     Returns:
-        (bool): True if account can participate as data provider in project
+        boolean - True if account can participate as data provider in project
     """
     while True:
         index = project_contract.functions.nodeState(account.address).call()
@@ -66,9 +71,9 @@ def check_node_state(w3, project_contract, account):
             # Request join as data provider
             print("You haven't requested access to project yet.")
             if yes_no_prompt("Do you want to join the project?", default=False):
-                public_key = export_public_key(account.private_key[2:])
+                public_key = export_public_key(account.key)
                 tx = project_contract.functions.requestJoinNode(public_key).transact(
-                    {"from": account._acct.address, "gasPrice": w3.eth.gas_price},
+                    {"from": account.address, "gasPrice": w3.eth.gas_price},
                 )
                 w3.eth.wait_for_transaction_receipt(tx)
                 print("Request to join sent. Waiting to be accepted.")
@@ -87,4 +92,4 @@ def check_node_state(w3, project_contract, account):
             return False
 
         # Check if node is set to active
-        return check_node_isactive(w3, project_contract, account)
+        return _check_node_isactive(w3, project_contract, account)
