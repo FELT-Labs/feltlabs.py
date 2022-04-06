@@ -24,6 +24,7 @@ from feltoken.ocean.ocean import get_ocean, get_wallet
 
 
 def allow_algorithm(data_did: str, alg_did: str, wallet: Wallet):
+    """Allow algorithm (DID) for given data (DID)."""
     ocean, _ = get_ocean()
     data_ddo = resolve_asset(
         data_did, metadata_cache_uri=ocean.config.metadata_cache_uri

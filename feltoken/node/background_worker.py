@@ -1,13 +1,12 @@
-import argparse
-import os
 import time
-from email.policy import default
-from getpass import getpass
+from optparse import Option
 from pathlib import Path
+from typing import Any, Optional, Union
 
 import numpy as np
-from dotenv import load_dotenv
+from eth_account.signers.local import LocalAccount as Account
 from web3 import Web3
+from web3.contract import Contract
 
 from feltoken.core.average import average_models
 from feltoken.core.contracts import to_dict
@@ -21,22 +20,14 @@ from feltoken.core.storage import (
     upload_final_model,
 )
 from feltoken.core.web3 import get_current_secret, get_project_contract, get_web3
+from feltoken.node.config import Config, parse_args
 from feltoken.node.training import train_model
-
-# Load dotenv at the beginning of the program
-load_dotenv()
 
 # Path for saving logs and models during training
 LOGS = Path(__file__).parent / "logs" / f"{time.time()}"
 
-KEYS = {
-    "main": os.getenv("PRIVATE_KEY"),
-    "node1": os.getenv("NODE1_PRIVATE_KEY"),
-    "node2": os.getenv("NODE2_PRIVATE_KEY"),
-}
 
-
-def get_plan(project_contract):
+def _get_plan(project_contract: Contract) -> Optional[dict]:
     """Get latest running plan else return None."""
     if project_contract.functions.isPlanRunning().call():
         length = project_contract.functions.numPlans().call()
@@ -45,9 +36,28 @@ def get_plan(project_contract):
     return None
 
 
-def execute_rounds(
-    data, model, plan, plan_dir, secret, account, project_contract, w3, config
-):
+def _watch_for_plan(project_contract: Contract):
+    """Wait until new plan created."""
+    # TODO: Use contract emiting events
+    print("Waiting for a plan.")
+    while True:
+        plan = _get_plan(project_contract)
+        if plan is not None:
+            return plan
+        time.sleep(3)
+
+
+def _execute_rounds(
+    data: Union[tuple, str],
+    model: Any,
+    plan: dict,
+    plan_dir: Path,
+    secret: bytes,
+    account: Account,
+    project_contract: Contract,
+    w3: Web3,
+    config: Config,
+) -> Any:
     """Perform training rounds according to the training plan.
 
     Args:
@@ -110,18 +120,8 @@ def execute_rounds(
     return model
 
 
-def watch_for_plan(project_contract):
-    """Wait until new plan created."""
-    # TODO: Use contract emiting events
-    print("Waiting for a plan.")
-    while True:
-        plan = get_plan(project_contract)
-        if plan is not None:
-            return plan
-        time.sleep(3)
-
-
-def task(data, config):
+def task(data: Union[tuple, str], config: Config):
+    """Connect to project contract and execute incoming training plans."""
     account = Web3().eth.account.from_key(config.account)
     w3 = get_web3(account, config.chain)
     print("Worker connected to chain id: ", w3.eth.chain_id)
@@ -137,7 +137,7 @@ def task(data, config):
     SECRET = get_node_secret(project_contract, account)
 
     while True:
-        plan = watch_for_plan(project_contract)
+        plan = _watch_for_plan(project_contract)
         print("Executing a plan!")
         # Use random seed from contract
         np.random.seed(plan["randomSeed"])
@@ -154,7 +154,7 @@ def task(data, config):
         ipfs_download_file(plan["baseModelCID"], output_path=base_model_path)
         model = load_model(base_model_path)
 
-        final_model = execute_rounds(
+        final_model = _execute_rounds(
             data,
             model,
             plan,
@@ -191,86 +191,10 @@ def task(data, config):
         print("Plan finished!")
 
 
-def parse_args(args_str=None):
-    """Parse and partially validate arguments form command line.
-    Arguments are parsed from string args_str or command line if args_str is None
-
-    Args:
-        args_str (str): string with arguments or None if using command line
-
-    Returns:
-        Parsed args object
-    """
-    parser = argparse.ArgumentParser(
-        description="Data provider worker script managing the trainig."
-    )
-    parser.add_argument(
-        "--chain",
-        type=int,
-        help="Chain Id of chain to which should be the worker connected.",
-    )
-    parser.add_argument("--contract", type=str, help="Contract address")
-    parser.add_argument(
-        "--account",
-        type=str,
-        default="main",
-        help="Name of account to use as specified in .env (main, node1, node2)",
-    )
-    parser.add_argument(
-        "--data",
-        type=str,
-        default="test",
-        help=(
-            "Path to CSV file with data. Last column is considered as Y."
-            "Or Ocean protocol dataset DID."
-        ),
-    )
-    # OCEAN protocol related
-    parser.add_argument(
-        "--ocean",
-        action="store_true",
-        help="Indicates if the dataset is compute-to-data dataset on ocean.",
-    )
-    parser.add_argument(
-        "--algorithm_did",
-        type=str,
-        default=None,
-        help=(
-            "DID of published algorithm which is allowed for training on data."
-            "Only required if --ocean is set."
-        ),
-    )
-    args = parser.parse_args(args_str)
-
-    assert args.chain in [
-        1337,
-        80001,
-        137,
-    ], "Invalid chain id or chain id is not supported (suppoerted: 1337, 137, 80001)"
-    assert len(args.contract) == 42, "The contract address has invalid length."
-    assert (
-        not args.ocean or args.algorithm_did
-    ), "algorithm_did must be set if ocean is True."
-
-    args.account = KEYS.get(args.account, None)
-    return args
-
-
-def main(args_str=None):
+def main(args_str: Optional[str] = None):
     """Parse arguments and run worker task (watching contract and training models)."""
     config = parse_args(args_str)
     data = load_data(config)
-
-    # Check for valid key and valid web3 token
-    if not config.account:
-        config.account = getpass(
-            "Please provide your private key (exported from MetaMask):"
-        )
-
-    if "WEB3_STORAGE_TOKEN" not in os.environ or not os.getenv("WEB3_STORAGE_TOKEN"):
-        os.environ["WEB3_STORAGE_TOKEN"] = getpass(
-            "Please input your web3.storage API token:"
-        )
 
     task(data, config)
 

@@ -7,6 +7,7 @@ from urllib import request
 
 # TODO: Replace the encryption functions with something else?
 from ecies.utils import aes_decrypt, aes_encrypt
+from eth_account.signers.local import LocalAccount as Account
 from eth_typing.evm import Address
 from nacl.public import Box, PrivateKey, PublicKey
 from web3 import Web3
@@ -26,7 +27,7 @@ CHAIN_ID_MAP = {
 }
 
 
-def get_web3(account, chain_id: int) -> Web3:
+def get_web3(account: Account, chain_id: int) -> Web3:
     """Get connection to web3."""
     w3 = Web3(Web3.HTTPProvider(CHAIN_ID_MAP[chain_id]))
     w3.eth.set_gas_price_strategy(medium_gas_price_strategy)
@@ -35,8 +36,8 @@ def get_web3(account, chain_id: int) -> Web3:
     return w3
 
 
-def download_abi(contract: str):
-    """Download contract ABI if missing."""
+def _download_abi(contract: str):
+    """Download contract ABI file based on contract name (if missing)."""
     if not (BUILD_FOLDER / f"{contract}.json").exists():
         BUILD_FOLDER.mkdir(parents=True, exist_ok=True)
         remote_url = f"{DEPLOYMENTS_GIT}/{contract}.json"
@@ -45,13 +46,9 @@ def download_abi(contract: str):
 
 def get_project_contract(w3: Web3, address: Address) -> Contract:
     """Load project contract on current chain from build folder."""
-    download_abi("ProjectContract")
+    _download_abi("ProjectContract")
     contract = json.load((BUILD_FOLDER / "ProjectContract.json").open())
     return w3.eth.contract(address=address, abi=contract["abi"])
-
-
-def _hex_to_bytes(hex: str) -> bytes:
-    return bytes.fromhex(hex[2:] if hex[:2] == "0x" else hex)
 
 
 def export_public_key(private_key: bytes) -> bytes:

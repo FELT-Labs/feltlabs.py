@@ -2,14 +2,21 @@
 import os
 import time
 from io import BytesIO
+from pathlib import Path
+from typing import Any, BinaryIO, Optional, Union
 
 import httpx
 import joblib
+from httpx import Response
 
 from feltoken.core.web3 import decrypt_bytes, encrypt_bytes, encrypt_nacl
 
+# File type definiton
+FileType = Union[str, Path, BinaryIO]
+PathType = Union[str, Path]
 
-def load_model(filename):
+
+def load_model(filename: FileType) -> Any:
     """Abstraction function for loading models.
 
     Args:
@@ -21,12 +28,12 @@ def load_model(filename):
     return joblib.load(filename)
 
 
-def export_model(model, path):
+def export_model(model: Any, path: PathType):
     """Abstraction function for exporting model to file."""
     joblib.dump(model, path)
 
 
-def model_to_bytes(model, path="/tmp/model") -> bytes:
+def model_to_bytes(model: Any, path: PathType = "/tmp/model") -> bytes:
     """Convert model to bytes which can be stored/exchanged/loaded.
 
     Args:
@@ -43,7 +50,7 @@ def model_to_bytes(model, path="/tmp/model") -> bytes:
         return f.read()
 
 
-def ipfs_upload_file(file):
+def ipfs_upload_file(file: BinaryIO) -> Optional[Response]:
     """Upload file to IPFS using web3.storage.
 
     Args:
@@ -52,7 +59,7 @@ def ipfs_upload_file(file):
     Returns:
         Response: httpx response object
     """
-    # TODO: Check for upload error
+    # TODO: Throw some error when upload fails on all 3 times
     for _ in range(3):
         try:
             return httpx.post(
@@ -66,16 +73,19 @@ def ipfs_upload_file(file):
             time.sleep(5)
 
 
-def ipfs_download_file(cid, output_path=None, secret=None):
+def ipfs_download_file(
+    cid: str, output_path: Optional[PathType] = None, secret: Optional[bytes] = None
+) -> bytes:
     """Download file stored in IPFS.
 
     Args:
-        cid (str): string describing location of the file.
-        output_path (Optiona[str]): if set file will be stored at this path.
+        cid: string describing location of the file.
+        output_path: if set file will be stored at this path.
 
     Returns:
-        Response: httpx response object
+        Response content: httpx response content object
     """
+    # TODO: Throw some error when no res object
     for _ in range(5):
         try:
             res = httpx.get(f"https://ipfs.io/ipfs/{cid}", timeout=30.0)
@@ -94,7 +104,7 @@ def ipfs_download_file(cid, output_path=None, secret=None):
     return content
 
 
-def upload_final_model(model, model_path, builder_key):
+def upload_final_model(model: Any, model_path: PathType, builder_key: bytes) -> str:
     """Encrypt and upload final model for builder to IPFS.
 
     Args:
@@ -116,7 +126,7 @@ def upload_final_model(model, model_path, builder_key):
     return res.json()["cid"]
 
 
-def upload_encrypted_model(model, model_path, secret):
+def upload_encrypted_model(model: Any, model_path: PathType, secret: bytes) -> str:
     """Encrypt and upload model to IPFS.
 
     Args:

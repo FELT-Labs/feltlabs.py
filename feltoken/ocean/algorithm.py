@@ -10,10 +10,12 @@ Run:
     python algorithm.py
 """
 import os
-import sys
+from typing import Optional
 
 from dotenv import load_dotenv
+from ocean_lib.assets.asset import V3Asset
 from ocean_lib.common.agreements.service_types import ServiceTypes
+from ocean_lib.models.data_token import DataToken
 from ocean_lib.services.service import Service
 from ocean_lib.web3_internal.currency import to_wei
 from ocean_lib.web3_internal.wallet import Wallet
@@ -21,7 +23,9 @@ from ocean_lib.web3_internal.wallet import Wallet
 from feltoken.ocean.ocean import get_ocean, get_wallet
 
 
-def get_metadata(file_provider_url: str):
+# TODO: Load actual dataset instead of test data
+def get_metadata(file_provider_url: str) -> dict:
+    """Get algorithm metadata."""
     return {
         "main": {
             "type": "algorithm",
@@ -30,7 +34,7 @@ def get_metadata(file_provider_url: str):
                 "format": "docker-image",
                 "version": "0.1",
                 "container": {
-                    "entrypoint": "python -m pip install git+https://github.com/FELToken/feltoken.py@ocean-integration; feltoken-train --model $ALGO --data test --output_model /data/outputs/result",
+                    "entrypoint": "python -m pip install git+https://github.com/FELToken/feltoken.py; feltoken-train --model $ALGO --data test --output_model /data/outputs/result",
                     "image": "python",
                     "tag": "3.9.12-buster",
                 },
@@ -50,7 +54,8 @@ def get_metadata(file_provider_url: str):
     }
 
 
-def get_attributes(address: str):
+def get_attributes(address: str) -> dict:
+    """Get algorithm attributes."""
     return {
         "main": {
             "name": "ALG_dataAssetAccessServiceAgreement",
@@ -62,7 +67,10 @@ def get_attributes(address: str):
     }
 
 
-def publish_algorithm(file_provider_url: str, wallet: Wallet):
+def publish_algorithm(
+    file_provider_url: str, wallet: Wallet
+) -> tuple[Optional[V3Asset], DataToken]:
+    """Publish algorithm to Ocean protocol using given wallet."""
     ocean, provider_url = get_ocean()
     # Publish alg datatoken
     alg_datatoken = ocean.create_data_token(

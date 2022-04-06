@@ -1,9 +1,12 @@
+"""Module for basic operations with Ocean protocol."""
 from pathlib import Path
 
+from ocean_lib.assets.asset import V3Asset
 from ocean_lib.assets.asset_resolver import resolve_asset
 from ocean_lib.data_provider.data_service_provider import DataServiceProvider
 from ocean_lib.example_config import ExampleConfig
 from ocean_lib.models.compute_input import ComputeInput
+from ocean_lib.models.data_token import DataToken
 from ocean_lib.ocean.ocean import Ocean
 from ocean_lib.web3_internal.constants import ZERO_ADDRESS
 from ocean_lib.web3_internal.wallet import Wallet
@@ -11,10 +14,12 @@ from ocean_lib.web3_internal.wallet import Wallet
 LOGS = Path(__file__).parent
 LOGS.mkdir(exist_ok=True)
 
+# Singleton OCEAN object - should be initialize only once
 OCEAN = None
 
 
-def get_ocean():
+def get_ocean() -> tuple[Ocean, str]:
+    """Get Ocean object."""
     global OCEAN
     if not OCEAN:
         config = ExampleConfig.get_config()
@@ -23,7 +28,8 @@ def get_ocean():
     return (OCEAN, provider_url)
 
 
-def get_wallet(private_key):
+def get_wallet(private_key: str) -> Wallet:
+    """Get wallet object for given private key."""
     ocean, _ = get_ocean()
     return Wallet(
         ocean.web3,
@@ -33,12 +39,13 @@ def get_wallet(private_key):
     )
 
 
-def resolve_did(did):
+def resolve_did(did: str) -> V3Asset:
+    """Resolve Ocean DID to asset."""
     ocean, _ = get_ocean()
     return resolve_asset(did, metadata_cache_uri=ocean.config.metadata_cache_uri)
 
 
-def get_algorithm(algorithm_did):
+def get_algorithm(algorithm_did: str) -> tuple[V3Asset, DataToken]:
     """Get already deployed algorithm or publish new."""
     ocean, _ = get_ocean()
     # Load algorithm DDO or publish alg
@@ -47,7 +54,8 @@ def get_algorithm(algorithm_did):
     return alg_ddo, alg_datatoken
 
 
-def start_job(data_did, alg_did, wallet, model_id):
+def start_job(data_did: str, alg_did: str, wallet: Wallet, model_id: str) -> str:
+    """Start compute-to-data job for given algorithm and data."""
     ocean, _ = get_ocean()
     # make sure we operate on the updated and indexed metadata_cache_uri versions
     data_ddo = ocean.assets.resolve(data_did)

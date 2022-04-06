@@ -9,8 +9,10 @@ Run:
     python dataset.py
 """
 import os
+from typing import Optional
 
 from dotenv import load_dotenv
+from ocean_lib.assets.asset import V3Asset
 from ocean_lib.common.agreements.service_types import ServiceTypes
 from ocean_lib.services.service import Service
 from ocean_lib.web3_internal.currency import to_wei
@@ -19,13 +21,13 @@ from ocean_lib.web3_internal.wallet import Wallet
 from feltoken.ocean.ocean import get_ocean, get_wallet
 
 
-def publish_dataset(wallet: Wallet):
+def publish_dataset(wallet: Wallet) -> Optional[V3Asset]:
+    "Function demonstrating publishing demo dataset on Ocean."
     ocean, provider_url = get_ocean()
     data_datatoken = ocean.create_data_token(
         "data1", "data1", wallet, blob=ocean.config.metadata_cache_uri
     )
     data_datatoken.mint(wallet.address, to_wei(100), wallet)
-    print(f"data_datatoken.address = '{data_datatoken.address}'")
     # Specify metadata & service attributes for dataset
     data_metadata = {
         "main": {

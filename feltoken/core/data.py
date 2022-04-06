@@ -1,8 +1,12 @@
+from typing import Union
+
 import numpy as np
 from sklearn import datasets
 
+from feltoken.node.config import Config
 
-def load_data(config):
+
+def load_data(config: Config) -> Union[tuple, str]:
     """Load data and return them in (X, y) formta."""
     if config.ocean:
         # config.data should contain DID

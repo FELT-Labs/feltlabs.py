@@ -6,7 +6,7 @@ import joblib
 from feltoken.core.storage import ipfs_upload_file
 
 
-def upload_model(model):
+def upload_model(model: Any) -> str:
     """Function for uploading scikit-learn model to ipfs."""
     tmp_path = Path("tmp_model.joblib")
     joblib.dump(model, tmp_path)
