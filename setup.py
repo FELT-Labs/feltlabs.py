@@ -34,7 +34,8 @@ Topic :: Scientific/Engineering
 artifacts = PATH / "feltoken/artifacts"
 artifacts.mkdir(parents=True, exist_ok=True)
 
-remote_url = "https://raw.githubusercontent.com/FELToken/smart-contracts/main/build/deployments/ProjectContract.json"
+# TODO: Add supported chains/remove contracts
+remote_url = "https://raw.githubusercontent.com/FELToken/smart-contracts/main/build/deployments/80001/ProjectContract.json"
 request.urlretrieve(remote_url, artifacts / "ProjectContract.json")
 
 
@@ -64,7 +65,7 @@ requirements = parse_requirements(PATH / "requirements.txt")
 
 setup(
     name="feltoken",
-    version="0.1.0",
+    version="0.2.0",
     packages=find_packages(),
     maintainer="FELToken",
     maintainer_email="info@bretahajek.com",
