@@ -27,7 +27,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       
       - name: Build and push Docker image
-        uses: docker/build-push-action@
+        uses: docker/build-push-action@v3
         with:
           push: true
           tags: feltoken/feltoken-py:latest

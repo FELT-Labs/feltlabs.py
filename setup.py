@@ -65,7 +65,7 @@ requirements = parse_requirements(PATH / "requirements.txt")
 
 setup(
     name="feltoken",
-    version="0.2.0",
+    version="0.2.1",
     packages=find_packages(),
     maintainer="FELToken",
     maintainer_email="info@bretahajek.com",
