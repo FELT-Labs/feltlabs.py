@@ -10,10 +10,3 @@ web3==5.19.0
 # web3 dependency, we use that for Account type
 eth_account
 eth_typing
-
-# Ocean integration
-ocean-lib==0.8.5
-# Fileprovider
-fastapi==0.75.0
-uvicorn
-python-multipart

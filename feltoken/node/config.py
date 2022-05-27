@@ -24,8 +24,6 @@ class Config:
     contract: str
     account: str
     data: str
-    ocean: bool
-    algorithm_did: str
     output_model: str
 
 
@@ -37,9 +35,6 @@ def _verify_config(config: Config) -> Config:
         137,
     ], "Invalid chain id or chain id is not supported (suppoerted: 1337, 137, 80001)"
     assert len(config.contract) == 42, "The contract address has invalid length."
-    assert (
-        not config.ocean or config.algorithm_did
-    ), "algorithm_did must be set if ocean is True."
 
     if config.account in KEYS and KEYS[config.account] is not None:
         config.account = KEYS[config.account]
@@ -86,25 +81,7 @@ def parse_args(args_str: Optional[str] = None) -> Config:
         "--data",
         type=str,
         default="test",
-        help=(
-            "Path to CSV file with data. Last column is considered as Y."
-            "Or Ocean protocol dataset DID."
-        ),
-    )
-    # OCEAN protocol related
-    parser.add_argument(
-        "--ocean",
-        action="store_true",
-        help="Indicates if the dataset is compute-to-data dataset on ocean.",
-    )
-    parser.add_argument(
-        "--algorithm_did",
-        type=str,
-        default=None,
-        help=(
-            "DID of published algorithm which is allowed for training on data."
-            "Only required if --ocean is set."
-        ),
+        help=("Path to CSV file with data. Last column is considered as Y."),
     )
     args = parser.parse_args(args_str)
 
