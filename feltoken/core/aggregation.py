@@ -1,12 +1,15 @@
 """Model for performing federated averaging of models."""
+import copy
 from typing import Any
 
 import numpy as np
 
+from feltoken.typing import Model
+
 ATTRIBUTE_LIST = ["coef_", "intercept_", "coefs_", "intercepts_"]
 
 
-def _get_models_params(models: list[Any]) -> dict[str, list[np.ndarray]]:
+def _get_models_params(models: list[Model]) -> dict[str, list[np.ndarray]]:
     """Extract trainable parameters from scikit-learn models.
 
     Args:
@@ -27,7 +30,7 @@ def _get_models_params(models: list[Any]) -> dict[str, list[np.ndarray]]:
     return params
 
 
-def _set_model_params(model: Any, params: dict[str, np.ndarray]):
+def _set_model_params(model: Model, params: dict[str, np.ndarray]) -> Model:
     """Set new values of trainable params to scikit-learn models.
 
     Args:
@@ -42,8 +45,8 @@ def _set_model_params(model: Any, params: dict[str, np.ndarray]):
     return model
 
 
-def average_models(models: list[Any]) -> Any:
-    """Average trainable parameters of scikit-learn models.
+def sum_models(models: list[Model]) -> Model:
+    """Sum trainable parameters of scikit-learn models.
 
     Args:
         models: list of scikit-learn models.
@@ -52,10 +55,29 @@ def average_models(models: list[Any]) -> Any:
         scikit-learn model with new values.
     """
     params = _get_models_params(models)
-    average_params = {}
+    new_params = {}
     for param, values in params.items():
         val = np.mean(values, axis=0)
-        average_params[param] = val.astype(values[0].dtype)
+        new_params[param] = val.astype(values[0].dtype)
 
-    model = _set_model_params(models[0], average_params)
+    model = _set_model_params(copy.deepcopy(models[0]), new_params)
+    return model
+
+
+def rand_model(model: Model) -> Any:
+    """Sum trainable parameters of scikit-learn models.
+
+    Args:
+        models: list of scikit-learn models.
+
+    Returns:
+        scikit-learn model with new values.
+    """
+    params = _get_models_params(models)
+    new_params = {}
+    for param, values in params.items():
+        val = np.mean(values, axis=0)
+        new_params[param] = val.astype(values[0].dtype)
+
+    model = _set_model_params(copy.deepcopy(models[0]), new_params)
     return model
