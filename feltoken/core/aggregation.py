@@ -1,4 +1,4 @@
-"""Model for performing federated averaging of models."""
+"""Module for performing federated averaging of models."""
 import copy
 from typing import Any
 
@@ -13,7 +13,7 @@ def _get_models_params(models: list[Model]) -> dict[str, list[np.ndarray]]:
     """Extract trainable parameters from scikit-learn models.
 
     Args:
-        modesl: list of scikit-learn models.
+        models: list of scikit-learn models.
 
     Returns:
         dictionary mapping attributes to list of values numpy arrays extracted from models.
@@ -26,6 +26,25 @@ def _get_models_params(models: list[Model]) -> dict[str, list[np.ndarray]]:
                 params[param].append(getattr(model, param))
         except Exception:
             params.pop(param, None)
+
+    return params
+
+
+def _get_model_params(model: Model) -> dict[str, np.ndarray]:
+    """Extract trainable parameters from scikit-learn model.
+
+    Args:
+        model: list of scikit-learn models.
+
+    Returns:
+        dictionary mapping attributes to list of values numpy arrays extracted from models.
+    """
+    params = {}
+    for param in ATTRIBUTE_LIST:
+        try:
+            params[param] = getattr(model, param)
+        except Exception:
+            pass
 
     return params
 
@@ -64,20 +83,20 @@ def sum_models(models: list[Model]) -> Model:
     return model
 
 
-def rand_model(model: Model) -> Any:
-    """Sum trainable parameters of scikit-learn models.
+def random_model(model: Model, min=-100, max=100) -> Any:
+    """Generate models with random parameters.
 
     Args:
-        models: list of scikit-learn models.
+        model: scikit-learn models.
 
     Returns:
-        scikit-learn model with new values.
+        scikit-learn model with random values.
     """
-    params = _get_models_params(models)
+    params = _get_model_params(model)
     new_params = {}
-    for param, values in params.items():
-        val = np.mean(values, axis=0)
-        new_params[param] = val.astype(values[0].dtype)
+    for param, value in params.items():
+        val = (max - min) * np.random.random(value.shape) + min
+        new_params[param] = val.astype(val.dtype)
 
-    model = _set_model_params(copy.deepcopy(models[0]), new_params)
+    model = _set_model_params(copy.deepcopy(model), new_params)
     return model

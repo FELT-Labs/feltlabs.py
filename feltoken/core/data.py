@@ -1,24 +1,12 @@
-import json
-import os
-from pathlib import Path
+"""Module for loading data and models."""
 from typing import Any
 
 import numpy as np
 
-from feltoken.algorithm.config import TrainingConfig
-
-INPUT_FOLDER = Path("/data/inputs/")
-
-
-def get_files() -> list[Path]:
-    """Get all files provided in Ocean's compute job environment."""
-    files = []
-    dids = json.loads(os.getenv("DIDS", "[]"))
-    for did in dids:
-        # In future we might need to do different actions based on DID
-        # just list all files in DID folder for now
-        files.extend(list(INPUT_FOLDER.joinpath(did).glob("*")))
-    return files
+from feltoken.algorithm.config import AggregationConfig, TrainingConfig
+from feltoken.core.cryptography import decrypt_nacl
+from feltoken.core.ocean import get_dataset_files
+from feltoken.core.storage import bytes_to_model
 
 
 # TODO: Add model type
@@ -30,7 +18,7 @@ def load_data(config: TrainingConfig) -> tuple[np.ndarray, np.ndarray]:
         y = np.random.rand(100)
         return X, y
     else:
-        files = get_files()
+        files = get_dataset_files()
         if config.data_type == "csv":
             X, y = [], []
             for f in files:
@@ -43,7 +31,14 @@ def load_data(config: TrainingConfig) -> tuple[np.ndarray, np.ndarray]:
     raise Exception("No data loaded.")
 
 
-def load_models(config: TrainingConfig) -> list[Any]:
+def load_models(config: AggregationConfig) -> list[Any]:
     """Load models for aggregation."""
-    files = get_files()
-    return files
+    files = get_dataset_files()
+    # Decrypt models using private key
+    models = []
+    for file_path in files:
+        with open(file_path, "rb") as f:
+            data = decrypt_nacl(config.private_key, f.read())
+            models.append(bytes_to_model(data))
+
+    return models
