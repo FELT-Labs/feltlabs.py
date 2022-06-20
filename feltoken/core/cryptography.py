@@ -1,9 +1,6 @@
 """Module for managing encryption/decryption using keys."""
 from base64 import a85decode, a85encode
 
-# TODO: Replace the encryption functions with something else?
-from eth_account.signers.local import LocalAccount as Account
-from eth_typing.evm import Address
 from nacl.public import Box, PrivateKey, PublicKey
 
 

@@ -21,11 +21,12 @@ def _get_models_params(models: list[Model]) -> dict[str, list[np.ndarray]]:
     params = {}
     for param in ATTRIBUTE_LIST:
         params[param] = []
-        try:
-            for model in models:
+        for model in models:
+            if hasattr(model, param):
                 params[param].append(getattr(model, param))
-        except Exception:
-            params.pop(param, None)
+            else:
+                params.pop(param, None)
+                break
 
     return params
 

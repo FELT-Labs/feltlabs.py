@@ -1,4 +1,4 @@
-.PHONY: help install lint clean
+.PHONY: help install lint clean test
 
 # You can specify exact version of python3 or venv name as environment variable
 PYTHON_VERSION?=python3.9
@@ -40,6 +40,9 @@ $(VENV_NAME)/bin/activate: requirements.txt
 clean:
 	find . -name '*.pyc' -exec rm --force {} +
 	rm -rf $(VENV_NAME) *.eggs *.egg-info dist build docs/_build .cache
+
+test:
+	${PYTHON} -m pytest --cov=feltoken --cov-report=term
 
 lint: venv
 	${PYTHON} -m flake8 feltoken

@@ -1,15 +1,12 @@
-"""Module for storing and managing data files at IPFS/Filecoin using web3.storage."""
+"""Module for storing and managing data files."""
 from io import BytesIO
-from pathlib import Path
-from typing import Any, BinaryIO, Union
+from typing import Any
 
 import joblib
 
+from feltoken.core import sklearn_to_json
 from feltoken.core.cryptography import encrypt_nacl
-
-# File type definiton
-FileType = Union[str, Path, BinaryIO]
-PathType = Union[str, Path]
+from feltoken.typing import FileType, PathType
 
 
 def load_model(filename: FileType) -> Any:
@@ -21,7 +18,7 @@ def load_model(filename: FileType) -> Any:
     Returns:
         model object
     """
-    return joblib.load(filename)
+    return sklearn_to_json.import_model(filename)
 
 
 def export_model(model: Any, path: PathType):
@@ -31,7 +28,7 @@ def export_model(model: Any, path: PathType):
 
 def bytes_to_model(data: bytes):
     """Transform bytes into model."""
-    return load_model(BytesIO(data))
+    return load_model(data)
 
 
 def model_to_bytes(model: Any, path: PathType = "/tmp/model") -> bytes:
