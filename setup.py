@@ -88,8 +88,8 @@ setup(
     zip_safe=False,
     entry_points={
         "console_scripts": [
-            "felt-node-worker = feltoken.node.background_worker:main",
-            "feltoken-train = feltoken.node.training:main",
+            "felt-train = feltoken.algorithm.train:main",
+            "felt-aggregate = feltoken.algorithm.aggregate:main",
         ],
     },
     package_data={

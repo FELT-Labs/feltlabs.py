@@ -4,6 +4,10 @@ flake8==4.0.1
 isort==5.10.1
 pre-commit==2.17.0
 
+# Test
+pytest
+pytest-cov
+
 # Build and publish
 wheel
 twine

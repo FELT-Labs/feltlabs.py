@@ -1,21 +1,44 @@
-from typing import Union
+"""Module for loading data and models."""
+from typing import Any
 
 import numpy as np
-from sklearn import datasets
 
-from feltoken.node.config import Config
+from feltoken.config import AggregationConfig, TrainingConfig
+from feltoken.core.cryptography import decrypt_nacl
+from feltoken.core.ocean import get_dataset_files
+from feltoken.core.storage import load_model
 
 
-def load_data(config: Config) -> Union[tuple, str]:
-    """Load data and return them in (X, y) formta."""
-    if config.data == "test":
+# TODO: Add model type
+def load_data(config: TrainingConfig) -> tuple[np.ndarray, np.ndarray]:
+    """Load data and return them in (X, y) format."""
+    if config.data_type == "test":
         # Demo data for testing
-        X, y = datasets.load_diabetes(return_X_y=True)
-        subset = np.random.choice(X.shape[0], 100, replace=False)
-        return X[subset], y[subset]
+        X = np.random.rand(100, 10)
+        y = np.random.rand(100)
+        return X, y
     else:
-        try:
-            data = np.genfromtxt(config.data, delimiter=",")
-            return data[:-1], data[-1]
-        except Exception as e:
-            raise Exception(f"Unable to load {config.data}\n{e}")
+        files = get_dataset_files(config)
+        if config.data_type == "csv":
+            X, y = [], []
+            for f in files:
+                data = np.genfromtxt(f, delimiter=",")
+                X.append(data[:-1])
+                y.append(data[-1])
+
+            return np.concatenate(X, axis=0), np.concatenate(y, axis=0)
+
+    raise Exception("No data loaded.")
+
+
+def load_models(config: AggregationConfig) -> list[Any]:
+    """Load models for aggregation."""
+    files = get_dataset_files(config)
+    # Decrypt models using private key
+    models = []
+    for file_path in files:
+        with open(file_path, "rb") as f:
+            data = decrypt_nacl(config.private_key, f.read())
+            models.append(load_model(data))
+
+    return models
