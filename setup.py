@@ -1,12 +1,14 @@
-"""FELToken python package intended for running data provider code.
+"""FELToken python package intended for running federated learning on Ocean protocol.
 
-This code connects to the specified smart contract and trains the specified
-models on provided data.
+This code is intended to work closely with Ocean protocol. Algorithms from this code
+should run on ocean provider. Training local models and aggregating them into global
+model.
 
-Entry command:
+Entry commands:
 
 ```bash
-felt-node-worker --chain <80001> --contract <address> --account main --data <data_path.csv>
+felt-train
+felt-aggregate
 ```
 """
 import re
@@ -29,14 +31,6 @@ Programming Language :: Python :: 3.10
 Programming Language :: Python :: 3 :: Only
 Topic :: Scientific/Engineering
 """
-
-# Download project contract artifacts
-artifacts = PATH / "feltoken/artifacts"
-artifacts.mkdir(parents=True, exist_ok=True)
-
-# TODO: Add supported chains/remove contracts
-remote_url = "https://raw.githubusercontent.com/FELToken/smart-contracts/main/build/deployments/80001/ProjectContract.json"
-request.urlretrieve(remote_url, artifacts / "ProjectContract.json")
 
 
 def parse_requirements(file_name):
@@ -65,7 +59,7 @@ requirements = parse_requirements(PATH / "requirements.txt")
 
 setup(
     name="feltoken",
-    version="0.2.1",
+    version="0.2.2",
     packages=find_packages(),
     maintainer="FELToken",
     maintainer_email="info@bretahajek.com",
@@ -91,8 +85,5 @@ setup(
             "felt-train = feltoken.algorithm.train:main",
             "felt-aggregate = feltoken.algorithm.aggregate:main",
         ],
-    },
-    package_data={
-        "feltoken": ["artifacts/*.json", "artifacts/contracts/*.json"],
     },
 )
