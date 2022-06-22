@@ -3,10 +3,10 @@ from typing import Any
 
 import numpy as np
 
-from feltoken.algorithm.config import AggregationConfig, TrainingConfig
+from feltoken.config import AggregationConfig, TrainingConfig
 from feltoken.core.cryptography import decrypt_nacl
 from feltoken.core.ocean import get_dataset_files
-from feltoken.core.storage import bytes_to_model
+from feltoken.core.storage import load_model
 
 
 # TODO: Add model type
@@ -18,7 +18,7 @@ def load_data(config: TrainingConfig) -> tuple[np.ndarray, np.ndarray]:
         y = np.random.rand(100)
         return X, y
     else:
-        files = get_dataset_files()
+        files = get_dataset_files(config)
         if config.data_type == "csv":
             X, y = [], []
             for f in files:
@@ -33,12 +33,12 @@ def load_data(config: TrainingConfig) -> tuple[np.ndarray, np.ndarray]:
 
 def load_models(config: AggregationConfig) -> list[Any]:
     """Load models for aggregation."""
-    files = get_dataset_files()
+    files = get_dataset_files(config)
     # Decrypt models using private key
     models = []
     for file_path in files:
         with open(file_path, "rb") as f:
             data = decrypt_nacl(config.private_key, f.read())
-            models.append(bytes_to_model(data))
+            models.append(load_model(data))
 
     return models

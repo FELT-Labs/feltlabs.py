@@ -1,6 +1,6 @@
 """Module for performing federated averaging of models."""
 import copy
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 
@@ -42,10 +42,8 @@ def _get_model_params(model: Model) -> dict[str, np.ndarray]:
     """
     params = {}
     for param in ATTRIBUTE_LIST:
-        try:
+        if hasattr(model, param):
             params[param] = getattr(model, param)
-        except Exception:
-            pass
 
     return params
 
@@ -65,6 +63,29 @@ def _set_model_params(model: Model, params: dict[str, np.ndarray]) -> Model:
     return model
 
 
+def _agg_models_op(
+    op: Callable,
+    models: list[Model],
+) -> Model:
+    """Perform aggregation operation on list of scikit-learn models.
+
+    Args:
+        op: function to run on model values
+        models: list of scikit-learn models
+
+    Returns:
+        scikit-learn model with new values based on op
+    """
+    params = _get_models_params(models)
+    new_params = {}
+    for param, values in params.items():
+        val = op(values)
+        new_params[param] = val.astype(values[0].dtype)
+
+    model = _set_model_params(copy.deepcopy(models[0]), new_params)
+    return model
+
+
 def sum_models(models: list[Model]) -> Model:
     """Sum trainable parameters of scikit-learn models.
 
@@ -74,14 +95,36 @@ def sum_models(models: list[Model]) -> Model:
     Returns:
         scikit-learn model with new values.
     """
-    params = _get_models_params(models)
-    new_params = {}
-    for param, values in params.items():
-        val = np.mean(values, axis=0)
-        new_params[param] = val.astype(values[0].dtype)
+    op = lambda x: np.sum(x, axis=0)
+    return _agg_models_op(op, models)
 
-    model = _set_model_params(copy.deepcopy(models[0]), new_params)
-    return model
+
+def aggregate_models(models: list[Model]) -> Model:
+    """Aggregate trainable parameters of scikit-learn models.
+
+    Args:
+        models: list of scikit-learn models.
+
+    Returns:
+        scikit-learn model with new values.
+    """
+    op = lambda x: np.mean(x, axis=0)
+    return _agg_models_op(op, models)
+
+
+def remove_noise_models(main_model: Model, random_models: list[Model]) -> Model:
+    """Remove added noise of random models from main scikit-learn model.
+
+    Args:
+        model: main scikit-learn model
+        models: list of scikit-learn models with random values.
+
+    Returns:
+        scikit-learn model with new values.
+    """
+    op = lambda x: -1 * np.mean(x, axis=0)
+    noise_model = _agg_models_op(op, random_models)
+    return sum_models([main_model, noise_model])
 
 
 def random_model(model: Model, min=-100, max=100) -> Any:

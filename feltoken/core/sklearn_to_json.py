@@ -1,11 +1,11 @@
 """Module for exporting sklearn models to json."""
 import json
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 from sklearn import linear_model
 
-from feltoken.typing import FileType, PathType
+from feltoken.typing import FileType, Model, PathType
 
 ATTRIBUTE_LIST = ["coef_", "intercept_", "coefs_", "intercepts_", "classes_", "n_iter_"]
 SUPPORTED_MODELS = {
@@ -14,7 +14,7 @@ SUPPORTED_MODELS = {
 }
 
 
-def _model_name(model: Any) -> str:
+def _model_name(model: Model) -> str:
     """Get name of model class."""
     for name, val in SUPPORTED_MODELS.items():
         if isinstance(model, val):
@@ -22,18 +22,15 @@ def _model_name(model: Any) -> str:
     raise Exception("Trying to export unsupported model")
 
 
-def export_model(
-    model: Any, filename: PathType = "", to_bytes: bool = False
-) -> Union[None, bytes]:
+def export_model(model: Model, filename: Optional[PathType] = None) -> bytes:
     """Export sklean model to JSON file or return it as bytes.
 
     Args:
         model: sklearn model
         filename: path to exported file
-        to_bytes: if true return bytes without exporting to file
 
     Returns:
-        bytes of JSON file if to_bytes is set true. Else it returns None
+        bytes of JSON file
     """
     data = {
         "model_name": _model_name(model),
@@ -45,14 +42,14 @@ def export_model(
         if hasattr(model, p):
             data["model_params"][p] = getattr(model, p).tolist()
 
-    if to_bytes:
-        return bytes(json.dumps(data), "utf-8")
+    if filename:
+        with open(filename, "w") as f:
+            json.dump(data, f)
 
-    with open(filename, "w") as f:
-        json.dump(data, f)
+    return bytes(json.dumps(data), "utf-8")
 
 
-def import_model(file: FileType) -> Any:
+def import_model(file: FileType) -> Model:
     """Import sklearn model from file.
 
     Args
@@ -71,8 +68,8 @@ def import_model(file: FileType) -> Any:
         raise Exception("Unsupported model type")
 
     model_class = SUPPORTED_MODELS[data["model_name"]]
-    model = model_class(**data["init_params"])
-    for name, values in data["model_params"].items():
+    model = model_class(**data.get("init_params", {}))
+    for name, values in data.get("model_params", {}).items():
         setattr(model, name, np.array(values))
 
     return model

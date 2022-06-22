@@ -88,7 +88,7 @@ setup(
     zip_safe=False,
     entry_points={
         "console_scripts": [
-            "felt-train = feltoken.algorithm.training:main",
+            "felt-train = feltoken.algorithm.train:main",
             "felt-aggregate = feltoken.algorithm.aggregate:main",
         ],
     },

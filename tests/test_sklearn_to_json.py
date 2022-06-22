@@ -14,7 +14,7 @@ def test_import_export(tmp_path):
     file_path = tmp_path / "model.json"
 
     export_model(model, file_path)
-    model_bytes = export_model(model, tmp_path, to_bytes=True)
+    model_bytes = export_model(model)
     with open(file_path, "rb") as f:
         assert f.read() == model_bytes
 

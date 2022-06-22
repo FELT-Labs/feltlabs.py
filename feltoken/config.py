@@ -1,28 +1,77 @@
 """Module for loading data provider (Node) config."""
 import argparse
+import json
+from pathlib import Path
 from typing import Optional, cast
 
-from feltoken.core.ocean import get_ocean_config
+OUTPUT_FOLDER = Path("/data/outputs")
+INPUT_FOLDER = Path("/data/inputs/")
+CUSTOM_DATA = "algoCustomData.json"
 
 
-class TrainingConfig:
-    model: str
+class OceanConfig:
+    input_folder: Path
+    output_folder: Path
+    custom_data: str
+
+
+class TrainingConfig(OceanConfig):
     aggregation_key: bytes
     public_key: bytes
     data_type: str
 
 
-class AggregationConfig:
+class AggregationConfig(OceanConfig):
     private_key: bytes
     public_key: bytes
 
 
-def parse_training_args(args_str: Optional[str] = None) -> TrainingConfig:
+def _get_ocean_config(config: OceanConfig) -> dict[str, str]:
+    """Load json file containing algorithm's custom data.
+
+    Args:
+        config: ocean config containing output path
+
+    Returns:
+        dict representing loaded JSON file
+    """
+    file = config.input_folder / config.custom_data
+    if not file.exists():
+        return {}
+
+    with file.open("r") as f:
+        return json.load(f)
+
+
+def _ocean_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    """Add arguments for parsing ocean path configs."""
+    parser.add_argument(
+        "--output_folder",
+        type=Path,
+        default=OUTPUT_FOLDER,
+        help="Folder for storing outputs.",
+    )
+    parser.add_argument(
+        "--input_folder",
+        type=Path,
+        default=INPUT_FOLDER,
+        help="Folder containing input data.",
+    )
+    parser.add_argument(
+        "--custom_data",
+        type=str,
+        default=CUSTOM_DATA,
+        help="Name of custom data file",
+    )
+    return parser
+
+
+def parse_training_args(args_str: Optional[list[str]] = None) -> TrainingConfig:
     """Parse and partially validate arguments form command line.
     Arguments are parsed from string args_str or command line if args_str is None
 
     Args:
-        args_str: string with arguments or None if using command line
+        args_str: list with string arguments or None if using command line
 
     Returns:
         Parsed args object
@@ -30,11 +79,7 @@ def parse_training_args(args_str: Optional[str] = None) -> TrainingConfig:
     parser = argparse.ArgumentParser(
         description="Script for training models, possible to execute from command line."
     )
-    parser.add_argument(
-        "--model",
-        type=str,
-        help="Model config to use.",
-    )
+    parser = _ocean_parser(parser)
     parser.add_argument(
         "--aggregation_key",
         type=str,
@@ -54,10 +99,9 @@ def parse_training_args(args_str: Optional[str] = None) -> TrainingConfig:
     )
     args = parser.parse_args(args_str)
 
-    conf = get_ocean_config()
-    args.public_key = conf["public_key"] if conf["public_key"] else args.public_key
-    args.model = conf["model"] if conf["model"] else args.model
-    args.data_type = conf["data_type"] if conf["data_type"] else args.model
+    conf = _get_ocean_config(cast(OceanConfig, args))
+    args.public_key = conf["public_key"] if "public_key" in conf else args.public_key
+    args.data_type = conf["data_type"] if "data_type" in conf else args.data_type
 
     args.aggregation_key = bytes.fromhex(args.aggregation_key)
     args.public_key = bytes.fromhex(args.public_key)
@@ -65,12 +109,12 @@ def parse_training_args(args_str: Optional[str] = None) -> TrainingConfig:
     return cast(TrainingConfig, args)
 
 
-def parse_aggregation_args(args_str: Optional[str] = None) -> AggregationConfig:
+def parse_aggregation_args(args_str: Optional[list[str]] = None) -> AggregationConfig:
     """Parse and partially validate arguments form command line.
     Arguments are parsed from string args_str or command line if args_str is None
 
     Args:
-        args_str: string with arguments or None if using command line
+        args_str: list with string arguments or None if using command line
 
     Returns:
         Parsed args object
@@ -78,6 +122,7 @@ def parse_aggregation_args(args_str: Optional[str] = None) -> AggregationConfig:
     parser = argparse.ArgumentParser(
         description="Script for training models, possible to execute from command line."
     )
+    parser = _ocean_parser(parser)
     parser.add_argument(
         "--private_key",
         type=str,
@@ -90,8 +135,8 @@ def parse_aggregation_args(args_str: Optional[str] = None) -> AggregationConfig:
     )
     args = parser.parse_args(args_str)
 
-    conf = get_ocean_config()
-    args.public_key = conf["public_key"] if conf["public_key"] else args.public_key
+    conf = _get_ocean_config(cast(OceanConfig, args))
+    args.public_key = conf["public_key"] if "public_key" in conf else args.public_key
 
     args.private_key = bytes.fromhex(args.private_key)
     args.public_key = bytes.fromhex(args.public_key)

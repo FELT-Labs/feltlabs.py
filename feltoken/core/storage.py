@@ -1,15 +1,12 @@
 """Module for storing and managing data files."""
-from io import BytesIO
-from typing import Any
-
-import joblib
+from typing import Any, Optional
 
 from feltoken.core import sklearn_to_json
 from feltoken.core.cryptography import encrypt_nacl
-from feltoken.typing import FileType, PathType
+from feltoken.typing import FileType, Model, PathType
 
 
-def load_model(filename: FileType) -> Any:
+def load_model(filename: FileType) -> Model:
     """Abstraction function for loading models.
 
     Args:
@@ -21,31 +18,9 @@ def load_model(filename: FileType) -> Any:
     return sklearn_to_json.import_model(filename)
 
 
-def export_model(model: Any, path: PathType):
+def export_model(model: Model, path: Optional[PathType] = None) -> bytes:
     """Abstraction function for exporting model to file."""
-    joblib.dump(model, path)
-
-
-def bytes_to_model(data: bytes):
-    """Transform bytes into model."""
-    return load_model(data)
-
-
-def model_to_bytes(model: Any, path: PathType = "/tmp/model") -> bytes:
-    """Convert model to bytes which can be stored/exchanged/loaded.
-
-    Args:
-        model: model object
-        path: path-like object where to store the model
-
-    Return:
-        bytes representing the model
-    """
-    # TODO: Optimize this part, so we don't need to r/w, json.dump to memory,
-    #       But sometimes we actually want to store the model so it's ok so far
-    export_model(model, path)
-    with open(path, "rb") as f:
-        return f.read()
+    return sklearn_to_json.export_model(model, path)
 
 
 def encrypt_model(model: Any, public_key: bytes) -> bytes:
@@ -58,6 +33,6 @@ def encrypt_model(model: Any, public_key: bytes) -> bytes:
     Returns:
         encrypted model as bytes
     """
-    model_bytes = model_to_bytes(model)
+    model_bytes = export_model(model)
     encrypted_model = encrypt_nacl(public_key, model_bytes)
     return encrypted_model
