@@ -1,4 +1,4 @@
-"""FELToken python package intended for running federated learning on Ocean protocol.
+"""FELT python package intended for running federated learning on Ocean protocol.
 
 This code is intended to work closely with Ocean protocol. Algorithms from this code
 should run on ocean provider. Training local models and aggregating them into global
@@ -13,7 +13,6 @@ felt-aggregate
 """
 import re
 from pathlib import Path
-from urllib import request
 
 from setuptools import find_packages, setup
 
@@ -58,21 +57,21 @@ requirements = parse_requirements(PATH / "requirements.txt")
 
 
 setup(
-    name="feltoken",
-    version="0.2.2",
+    name="feltlabs",
+    version="0.2.3",
     packages=find_packages(),
-    maintainer="FELToken",
+    maintainer="FELT Labs",
     maintainer_email="info@bretahajek.com",
     description=DOCLINES[0],
     long_description="\n".join(DOCLINES[2:]),
     long_description_content_type="text/markdown",
     keywords=["Federated Learning", "Web3", "Machine Learning"],
-    url="https://feltoken.ai/",
-    author="FELToken",
+    url="https://feltlabs.ai/",
+    author="FELT Labs",
     project_urls={
-        "Bug Tracker": "https://github.com/FELToken/feltoken.py/issues",
-        "Documentation": "https://docs.feltoken.ai/",
-        "Source Code": "https://github.com/FELToken/feltoken.py",
+        "Bug Tracker": "https://github.com/FELT-Labs/feltlabs.py/issues",
+        "Documentation": "https://docs.feltlabs.ai/",
+        "Source Code": "https://github.com/FELT-Labs/feltlabs.py",
     },
     license="GPL-3.0 License",
     classifiers=[_f for _f in CLASSIFIERS.split("\n") if _f],
@@ -82,8 +81,8 @@ setup(
     zip_safe=False,
     entry_points={
         "console_scripts": [
-            "felt-train = feltoken.algorithm.train:main",
-            "felt-aggregate = feltoken.algorithm.aggregate:main",
+            "felt-train = feltlabs.algorithm.train:main",
+            "felt-aggregate = feltlabs.algorithm.aggregate:main",
         ],
     },
 )

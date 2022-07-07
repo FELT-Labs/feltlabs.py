@@ -1,11 +1,11 @@
 """Module for aggregating outputs of local training."""
 from typing import Optional
 
-from feltoken.config import parse_aggregation_args
-from feltoken.core.aggregation import aggregate_models
-from feltoken.core.data import load_models
-from feltoken.core.ocean import save_output
-from feltoken.core.storage import encrypt_model
+from feltlabs.config import parse_aggregation_args
+from feltlabs.core.aggregation import aggregate_models
+from feltlabs.core.data import load_models
+from feltlabs.core.ocean import save_output
+from feltlabs.core.storage import encrypt_model
 
 
 def main(args_str: Optional[list[str]] = None, output_name: str = "model"):

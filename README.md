@@ -1,7 +1,7 @@
-# feltoken.py
-Python library for FELToken. It is available at [PyPI](https://pypi.org/project/feltoken/):
+# feltlabs.py
+Python library for FELT Labs. It is available at [PyPI](https://pypi.org/project/feltlabs/):
 ```bash
-pip install feltoken
+pip install feltlabs
 ```
 
 
@@ -15,7 +15,7 @@ pre-commit install
 
 ### Test
 ```
-pytest --cov=feltoken --cov-report=term
+pytest --cov=feltlabs --cov-report=term
 ```
 
 ### Versioning

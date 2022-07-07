@@ -42,7 +42,7 @@ clean:
 	rm -rf $(VENV_NAME) *.eggs *.egg-info dist build docs/_build .cache
 
 test:
-	${PYTHON} -m pytest --cov=feltoken --cov-report=term
+	${PYTHON} -m pytest --cov=feltlabs --cov-report=term
 
 lint: venv
-	${PYTHON} -m flake8 feltoken
+	${PYTHON} -m flake8 feltlabs

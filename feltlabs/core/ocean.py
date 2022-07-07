@@ -1,7 +1,7 @@
 """Function specific for Ocean's compute-to-data environment."""
 from pathlib import Path
 
-from feltoken.config import OceanConfig
+from feltlabs.config import OceanConfig
 
 
 def get_dataset_files(config: OceanConfig) -> list[Path]:

@@ -4,7 +4,7 @@ from typing import Any, Callable
 
 import numpy as np
 
-from feltoken.typing import Model
+from feltlabs.typing import Model
 
 ATTRIBUTE_LIST = ["coef_", "intercept_", "coefs_", "intercepts_"]
 

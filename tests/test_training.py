@@ -3,13 +3,13 @@ import json
 
 from nacl.public import PrivateKey
 
-from feltoken.algorithm import aggregate, train
-from feltoken.config import parse_training_args
-from feltoken.core.aggregation import remove_noise_models
-from feltoken.core.cryptography import decrypt_nacl
-from feltoken.core.data import load_data
-from feltoken.core.ocean import save_output
-from feltoken.core.storage import load_model
+from feltlabs.algorithm import aggregate, train
+from feltlabs.config import parse_training_args
+from feltlabs.core.aggregation import remove_noise_models
+from feltlabs.core.cryptography import decrypt_nacl
+from feltlabs.core.data import load_data
+from feltlabs.core.ocean import save_output
+from feltlabs.core.storage import load_model
 
 # data = np.array([[0, 0], [1, 1], [2, 2]]), np.array([0, 1, 2])
 

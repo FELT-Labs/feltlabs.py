@@ -30,10 +30,10 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           push: true
-          tags: feltoken/feltoken-py:latest
+          tags: feltlabs/feltlabs-py:latest
           labels: |
-            ai.feltoken.version=${{ github.ref_name }}
-            ai.feltoken.name=FELToken.py
-            ai.feltoken.description=Docker image for running FELToken training algorithms.
-            ai.feltoken.url=https://feltoken.ai
-            ai.feltoken.build-date=${{ github.event.workflow_run.created_at }}
+            ai.feltlabs.version=${{ github.ref_name }}
+            ai.feltlabs.name=feltlabs.py
+            ai.feltlabs.description=Docker image for running FELT Labs training algorithms.
+            ai.feltlabs.url=https://feltlabs.ai
+            ai.feltlabs.build-date=${{ github.event.workflow_run.created_at }}

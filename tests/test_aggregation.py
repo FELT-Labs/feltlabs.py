@@ -2,13 +2,13 @@
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
-from feltoken.core.aggregation import (
+from feltlabs.core.aggregation import (
     aggregate_models,
     random_model,
     remove_noise_models,
     sum_models,
 )
-from feltoken.core.sklearn_to_json import export_model, import_model
+from feltlabs.core.sklearn_to_json import export_model, import_model
 
 X = [[0], [1], [2]]
 y = [[0, 1, 2], [1, 2, 3], [0, 2, 4]]

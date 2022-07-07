@@ -28,4 +28,4 @@ jobs:
 
       - name: Test with pytest
         run: |
-          pytest --cov=feltoken --cov-report=term
+          pytest --cov=feltlabs --cov-report=term

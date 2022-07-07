@@ -1,9 +1,9 @@
 """Module for storing and managing data files."""
 from typing import Any, Optional
 
-from feltoken.core import sklearn_to_json
-from feltoken.core.cryptography import encrypt_nacl
-from feltoken.typing import FileType, Model, PathType
+from feltlabs.core import sklearn_to_json
+from feltlabs.core.cryptography import encrypt_nacl
+from feltlabs.typing import FileType, Model, PathType
 
 
 def load_model(filename: FileType) -> Model:

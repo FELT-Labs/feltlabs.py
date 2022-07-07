@@ -5,7 +5,7 @@ from typing import Any, Optional, Union
 import numpy as np
 from sklearn import linear_model
 
-from feltoken.typing import FileType, Model, PathType
+from feltlabs.typing import FileType, Model, PathType
 
 ATTRIBUTE_LIST = ["coef_", "intercept_", "coefs_", "intercepts_", "classes_", "n_iter_"]
 SUPPORTED_MODELS = {

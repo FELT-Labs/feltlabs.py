@@ -1,12 +1,12 @@
 """Module for executing model training."""
 from typing import Optional
 
-from feltoken.config import parse_training_args
-from feltoken.core.aggregation import random_model, sum_models
-from feltoken.core.data import load_data
-from feltoken.core.ocean import save_output
-from feltoken.core.storage import encrypt_model, load_model
-from feltoken.core.training import train_model
+from feltlabs.config import parse_training_args
+from feltlabs.core.aggregation import random_model, sum_models
+from feltlabs.core.data import load_data
+from feltlabs.core.ocean import save_output
+from feltlabs.core.storage import encrypt_model, load_model
+from feltlabs.core.training import train_model
 
 
 def main(args_str: Optional[list[str]] = None, output_name: str = "model"):

@@ -3,10 +3,10 @@ from typing import Any
 
 import numpy as np
 
-from feltoken.config import AggregationConfig, TrainingConfig
-from feltoken.core.cryptography import decrypt_nacl
-from feltoken.core.ocean import get_dataset_files
-from feltoken.core.storage import load_model
+from feltlabs.config import AggregationConfig, TrainingConfig
+from feltlabs.core.cryptography import decrypt_nacl
+from feltlabs.core.ocean import get_dataset_files
+from feltlabs.core.storage import load_model
 
 
 # TODO: Add model type

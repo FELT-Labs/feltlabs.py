@@ -1,7 +1,7 @@
 """Test encryption/decription mechanism."""
 from nacl.public import PrivateKey
 
-from feltoken.core.cryptography import decrypt_nacl, encrypt_nacl, export_public_key
+from feltlabs.core.cryptography import decrypt_nacl, encrypt_nacl, export_public_key
 
 
 def test_cryptography():

@@ -3,7 +3,7 @@ from typing import Any
 
 import numpy as np
 
-from feltoken.typing import Model
+from feltlabs.typing import Model
 
 
 def train_model(

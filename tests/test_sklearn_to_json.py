@@ -2,7 +2,7 @@
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
-from feltoken.core.sklearn_to_json import export_model, import_model
+from feltlabs.core.sklearn_to_json import export_model, import_model
 
 X, y = [[0, 0], [1, 1], [2, 2]], [0, 1, 2]
 
