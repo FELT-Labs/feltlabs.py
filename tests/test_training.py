@@ -5,7 +5,7 @@ from nacl.public import PrivateKey
 
 from feltlabs.algorithm import aggregate, train
 from feltlabs.config import parse_training_args
-from feltlabs.core.aggregation import remove_noise_models
+from feltlabs.core.aggregation import random_model, remove_noise_models
 from feltlabs.core.cryptography import decrypt_nacl
 from feltlabs.core.data import load_data
 from feltlabs.core.ocean import save_output
@@ -32,25 +32,25 @@ def test_training(tmp_path):
     with open(input_folder / "algoCustomData.json", "w") as f:
         json.dump(model_def, f)
 
-    enc_models, enc_rand_models = [], []
+    enc_models, seeds = [], []
 
     ### Training section ###
     args_str = f"--output_folder {output_folder}"
     args_str += f" --input_folder {input_folder}"
     args_str += f" --aggregation_key {bytes(aggregation_key.public_key).hex()}"
-    args_str += f" --public_key {bytes(scientist_key.public_key).hex()}"
 
     # Define extra args with different output folder
     args = parse_training_args(args_str.split())
     args.output_folder = output_folder2
 
     for i in range(2):
-        enc_model, enc_rand_model = train.main(args_str.split(), f"model_{i}")
+        args_str_final = f"{args_str} --seed {i}"
+        enc_model = train.main(args_str_final.split(), f"model_{i}")
 
         save_output(f"model_{i}", enc_model, args)
 
         enc_models.append(enc_model)
-        enc_rand_models.append(enc_rand_model)
+        seeds.append(i)
 
     ### Aggregation section ###
     args_str = f"--output_folder {output_folder2}"
@@ -62,9 +62,7 @@ def test_training(tmp_path):
 
     ### Test final results ###
     final_model = load_model(decrypt_nacl(bytes(scientist_key), enc_final_model))
-    rand_models = [
-        load_model(decrypt_nacl(bytes(scientist_key), m)) for m in enc_rand_models
-    ]
+    rand_models = [random_model(final_model, s) for s in seeds]
     model = remove_noise_models(final_model, rand_models)
 
     # Predict

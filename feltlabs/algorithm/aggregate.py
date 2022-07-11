@@ -20,11 +20,12 @@ def main(args_str: Optional[list[str]] = None, output_name: str = "model"):
     models = load_models(args)
     # Aggregate
     model = aggregate_models(models)
-    # Add randomness to model and encrypt using public key for aggregation
-    enc_model = encrypt_model(model, args.public_key)
+    # Encrypt final model using scientist public key if provided
+    if args.public_key:
+        model = encrypt_model(model, args.public_key)
     # Save model into output
-    save_output(output_name, enc_model, args)
-    return enc_model
+    save_output(output_name, model, args)
+    return model
 
 
 if __name__ == "__main__":

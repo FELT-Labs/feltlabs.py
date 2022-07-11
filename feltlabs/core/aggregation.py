@@ -1,5 +1,6 @@
 """Module for performing federated averaging of models."""
 import copy
+import random
 from typing import Any, Callable
 
 import numpy as np
@@ -127,15 +128,26 @@ def remove_noise_models(main_model: Model, random_models: list[Model]) -> Model:
     return sum_models([main_model, noise_model])
 
 
-def random_model(model: Model, min=-100, max=100) -> Any:
+def _set_seed(seed: int) -> None:
+    """Set seed of random generator."""
+    np.random.seed(seed)
+    random.seed(seed)
+
+
+def random_model(model: Model, seed: int, min: int = -100, max: int = 100) -> Any:
     """Generate models with random parameters.
 
     Args:
         model: scikit-learn models.
+        seed: seed for randomness generation
+        min: minimum value of random number
+        max: maximum value of random number
 
     Returns:
         scikit-learn model with random values.
     """
+    _set_seed(seed)
+
     params = _get_model_params(model)
     new_params = {}
     for param, value in params.items():

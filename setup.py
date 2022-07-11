@@ -83,6 +83,7 @@ setup(
         "console_scripts": [
             "felt-train = feltlabs.algorithm.train:main",
             "felt-aggregate = feltlabs.algorithm.aggregate:main",
+            "felt-export = feltlabs.model:main",
         ],
     },
 )
