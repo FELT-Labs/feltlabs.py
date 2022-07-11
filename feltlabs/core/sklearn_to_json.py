@@ -5,6 +5,7 @@ from typing import Any, Optional, Union
 import numpy as np
 from sklearn import linear_model
 
+from feltlabs.core.aggregation import random_model, remove_noise_models
 from feltlabs.typing import FileType, Model, PathType
 
 ATTRIBUTE_LIST = ["coef_", "intercept_", "coefs_", "intercepts_", "classes_", "n_iter_"]
@@ -71,5 +72,10 @@ def import_model(file: FileType) -> Model:
     model = model_class(**data.get("init_params", {}))
     for name, values in data.get("model_params", {}).items():
         setattr(model, name, np.array(values))
+
+    # Substract random models (generated from seeds) from loaded model
+    if "seeds" in data:
+        rand_models = [random_model(model, s) for s in data.get("seeds", [])]
+        model = remove_noise_models(model, rand_models)
 
     return model

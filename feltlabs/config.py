@@ -17,8 +17,8 @@ class OceanConfig:
 
 class TrainingConfig(OceanConfig):
     aggregation_key: bytes
-    public_key: bytes
     data_type: str
+    seed: int
 
 
 class AggregationConfig(OceanConfig):
@@ -86,25 +86,24 @@ def parse_training_args(args_str: Optional[list[str]] = None) -> TrainingConfig:
         help="Public key used for encrypting local model for aggregation algorithm.",
     )
     parser.add_argument(
-        "--public_key",
-        type=str,
-        help="Public key used for encrypting rand model for scientis.",
-    )
-    parser.add_argument(
         "--data_type",
         type=str,
         default="test",
         choices=["test", "csv"],
-        help=("Select type of data. For csv last column is used as Y."),
+        help="Select type of data. For csv last column is used as Y.",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Seed for randomness generation. It should be different for every run.",
     )
     args = parser.parse_args(args_str)
 
     conf = _get_ocean_config(cast(OceanConfig, args))
-    args.public_key = conf["public_key"] if "public_key" in conf else args.public_key
     args.data_type = conf["data_type"] if "data_type" in conf else args.data_type
-
+    args.seed = conf["seed"] if "seed" in conf else args.seed
     args.aggregation_key = bytes.fromhex(args.aggregation_key)
-    args.public_key = bytes.fromhex(args.public_key)
 
     return cast(TrainingConfig, args)
 
@@ -132,6 +131,7 @@ def parse_aggregation_args(args_str: Optional[list[str]] = None) -> AggregationC
         "--public_key",
         type=str,
         help="Public key used for encrypting final model for scientis.",
+        default=None,
     )
     args = parser.parse_args(args_str)
 
@@ -139,6 +139,7 @@ def parse_aggregation_args(args_str: Optional[list[str]] = None) -> AggregationC
     args.public_key = conf["public_key"] if "public_key" in conf else args.public_key
 
     args.private_key = bytes.fromhex(args.private_key)
-    args.public_key = bytes.fromhex(args.public_key)
+    if args.public_key:
+        args.public_key = bytes.fromhex(args.public_key)
 
     return cast(AggregationConfig, args)

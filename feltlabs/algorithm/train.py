@@ -22,17 +22,15 @@ def main(args_str: Optional[list[str]] = None, output_name: str = "model"):
     data = load_data(args)
     # Train model
     model = train_model(model, data)
-    # Add randomness to model and encrypt using public key for aggregation
-    rand_model = random_model(model)
+    # Add randomness to model
+    rand_model = random_model(model, args.seed)
     model = sum_models([model, rand_model])
-
+    # Encrypt model using public key of aggregation
     enc_model = encrypt_model(model, args.aggregation_key)
-    enc_rand_model = encrypt_model(rand_model, args.public_key)
 
     # Save models into output
     save_output(output_name, enc_model, args)
-    save_output(f"{output_name}_rand", enc_rand_model, args)
-    return enc_model, enc_rand_model
+    return enc_model
 
 
 if __name__ == "__main__":
