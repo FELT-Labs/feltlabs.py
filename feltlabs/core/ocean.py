@@ -14,9 +14,9 @@ def get_dataset_files(config: OceanConfig) -> list[Path]:
         list of file paths
     """
     files = []
-    for file in config.input_folder.glob("**/*"):
-        if file.name != config.custom_data:
-            files.append(file)
+    for path in config.input_folder.glob("**/*"):
+        if path.is_file() and path.name != config.custom_data:
+            files.append(path)
     return files
 
 
