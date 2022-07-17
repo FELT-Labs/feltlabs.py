@@ -56,12 +56,11 @@ def test_training(tmp_path):
     args_str = f"--output_folder {output_folder2}"
     args_str += f" --input_folder {output_folder2}"
     args_str += f" --private_key {bytes(aggregation_key).hex()}"
-    args_str += f" --public_key {bytes(scientist_key.public_key).hex()}"
 
     enc_final_model = aggregate.main(args_str.split(), "final_model")
 
     ### Test final results ###
-    final_model = load_model(decrypt_nacl(bytes(scientist_key), enc_final_model))
+    final_model = load_model(enc_final_model)
     rand_models = [random_model(final_model, s) for s in seeds]
     model = remove_noise_models(final_model, rand_models)
 

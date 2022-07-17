@@ -5,7 +5,7 @@ from feltlabs.config import parse_aggregation_args
 from feltlabs.core.aggregation import aggregate_models
 from feltlabs.core.data import load_models
 from feltlabs.core.ocean import save_output
-from feltlabs.core.storage import encrypt_model
+from feltlabs.core.storage import encrypt_model, export_model
 
 
 def main(args_str: Optional[list[str]] = None, output_name: str = "model"):
@@ -23,7 +23,9 @@ def main(args_str: Optional[list[str]] = None, output_name: str = "model"):
     # Encrypt final model using scientist public key if provided
     if args.public_key:
         model = encrypt_model(model, args.public_key)
-    # Save model into output
+    else:
+        model = export_model(model)
+    # Save model (bytes) into output
     save_output(output_name, model, args)
     return model
 
