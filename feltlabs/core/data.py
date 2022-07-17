@@ -23,8 +23,8 @@ def load_data(config: TrainingConfig) -> tuple[np.ndarray, np.ndarray]:
             X, y = [], []
             for f in files:
                 data = np.genfromtxt(f, delimiter=",")
-                X.append(data[:-1])
-                y.append(data[-1])
+                X.append(data[:, :-1])
+                y.append(data[:, -1])
 
             return np.concatenate(X, axis=0), np.concatenate(y, axis=0)
 
