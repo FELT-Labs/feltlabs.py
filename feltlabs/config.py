@@ -28,24 +28,21 @@ class AggregationConfig(OceanConfig):
     download_models: bool
 
 
-def _add_ocean_config(config: argparse.Namespace) -> None:
+def _add_ocean_config(config: OceanConfig) -> dict[str, str]:
     """Load json file containing algorithm's custom data and add them to config.
 
     Args:
         config: ocean config containing output path
+
+    Returns:
+        dict representing loaded JSON file
     """
     config.custom_data_path = config.input_folder / config.custom_data
     if not config.custom_data_path.exists():
-        return
+        return {}
 
     with config.custom_data_path.open("r") as f:
-        conf = json.load(f)
-
-    config.public_key = (
-        conf["public_key"] if "public_key" in conf else config.public_key
-    )
-    config.data_type = conf["data_type"] if "data_type" in conf else config.data_type
-    config.seed = conf["seed"] if "seed" in conf else config.seed
+        return json.load(f)
 
 
 def _ocean_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -105,7 +102,10 @@ def parse_training_args(args_str: Optional[list[str]] = None) -> TrainingConfig:
     )
     args = parser.parse_args(args_str)
 
-    _add_ocean_config(args)
+    conf = _add_ocean_config(cast(OceanConfig, args))
+    args.data_type = conf["data_type"] if "data_type" in conf else args.data_type
+    args.seed = conf["seed"] if "seed" in conf else args.seed
+
     args.aggregation_key = bytes.fromhex(args.aggregation_key)
 
     return cast(TrainingConfig, args)
@@ -138,14 +138,14 @@ def parse_aggregation_args(args_str: Optional[list[str]] = None) -> AggregationC
     )
     parser.add_argument(
         "--download_models",
-        type=bool,
         help="If true, models will be donwloaded from provided URLs",
         action="store_true",
         default=False,
     )
     args = parser.parse_args(args_str)
 
-    _add_ocean_config(args)
+    conf = _add_ocean_config(cast(OceanConfig, args))
+    args.public_key = conf["public_key"] if "public_key" in conf else args.public_key
 
     args.private_key = bytes.fromhex(args.private_key)
     if args.public_key:
