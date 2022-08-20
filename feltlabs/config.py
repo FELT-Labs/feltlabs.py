@@ -12,6 +12,7 @@ CUSTOM_DATA = "algoCustomData.json"
 class OceanConfig:
     input_folder: Path
     output_folder: Path
+    custom_data_path: Path
     custom_data: str
 
 
@@ -24,23 +25,27 @@ class TrainingConfig(OceanConfig):
 class AggregationConfig(OceanConfig):
     private_key: bytes
     public_key: bytes
+    download_models: bool
 
 
-def _get_ocean_config(config: OceanConfig) -> dict[str, str]:
-    """Load json file containing algorithm's custom data.
+def _add_ocean_config(config: argparse.Namespace) -> None:
+    """Load json file containing algorithm's custom data and add them to config.
 
     Args:
         config: ocean config containing output path
-
-    Returns:
-        dict representing loaded JSON file
     """
-    file = config.input_folder / config.custom_data
-    if not file.exists():
-        return {}
+    config.custom_data_path = config.input_folder / config.custom_data
+    if not config.custom_data_path.exists():
+        return
 
-    with file.open("r") as f:
-        return json.load(f)
+    with config.custom_data_path.open("r") as f:
+        conf = json.load(f)
+
+    config.public_key = (
+        conf["public_key"] if "public_key" in conf else config.public_key
+    )
+    config.data_type = conf["data_type"] if "data_type" in conf else config.data_type
+    config.seed = conf["seed"] if "seed" in conf else config.seed
 
 
 def _ocean_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -100,9 +105,7 @@ def parse_training_args(args_str: Optional[list[str]] = None) -> TrainingConfig:
     )
     args = parser.parse_args(args_str)
 
-    conf = _get_ocean_config(cast(OceanConfig, args))
-    args.data_type = conf["data_type"] if "data_type" in conf else args.data_type
-    args.seed = conf["seed"] if "seed" in conf else args.seed
+    _add_ocean_config(args)
     args.aggregation_key = bytes.fromhex(args.aggregation_key)
 
     return cast(TrainingConfig, args)
@@ -133,10 +136,16 @@ def parse_aggregation_args(args_str: Optional[list[str]] = None) -> AggregationC
         help="Public key used for encrypting final model for scientis.",
         default=None,
     )
+    parser.add_argument(
+        "--download_models",
+        type=bool,
+        help="If true, models will be donwloaded from provided URLs",
+        action="store_true",
+        default=False,
+    )
     args = parser.parse_args(args_str)
 
-    conf = _get_ocean_config(cast(OceanConfig, args))
-    args.public_key = conf["public_key"] if "public_key" in conf else args.public_key
+    _add_ocean_config(args)
 
     args.private_key = bytes.fromhex(args.private_key)
     if args.public_key:
