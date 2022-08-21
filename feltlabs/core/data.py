@@ -34,25 +34,28 @@ def load_data(config: TrainingConfig) -> tuple[np.ndarray, np.ndarray]:
 
 
 def load_models(config: AggregationConfig) -> list[Any]:
-    """Load models for aggregation."""
+    """Load models for aggregation.
+    It either download models from urls or load them from input path.
+    """
+    data_array = []
     if config.download_models:
         with config.custom_data_path.open("r") as f:
             conf = json.load(f)
 
-        models = []
         for url in conf["model_urls"]:
             res = requests.get(url)
-            data = decrypt_nacl(config.private_key, res.content)
-            models.append(load_model(data))
+            data_array.append(res.content)
 
-        return models
+    else:
+        files = get_dataset_files(config)
+        # Decrypt models using private key
+        for file_path in files:
+            with open(file_path, "rb") as f:
+                data_array.append(f.read())
 
-    files = get_dataset_files(config)
-    # Decrypt models using private key
     models = []
-    for file_path in files:
-        with open(file_path, "rb") as f:
-            data = decrypt_nacl(config.private_key, f.read())
-            models.append(load_model(data))
+    for val in data_array:
+        data = decrypt_nacl(config.private_key, val)
+        models.append(load_model(data))
 
     return models

@@ -30,6 +30,7 @@ def main(args_str: Optional[list[str]] = None, output_name: str = "model"):
 
     # Save models into output
     save_output(output_name, enc_model, args)
+    print("Training finieshed.")
     return enc_model
 
 
