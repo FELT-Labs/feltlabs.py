@@ -27,6 +27,7 @@ def main(args_str: Optional[list[str]] = None, output_name: str = "model"):
         model = export_model(model)
     # Save model (bytes) into output
     save_output(output_name, model, args)
+    print("Aggregation finieshed.")
     return model
 
 

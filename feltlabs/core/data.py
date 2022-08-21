@@ -1,7 +1,9 @@
 """Module for loading data and models."""
+import json
 from typing import Any
 
 import numpy as np
+import requests
 
 from feltlabs.config import AggregationConfig, TrainingConfig
 from feltlabs.core.cryptography import decrypt_nacl
@@ -32,13 +34,28 @@ def load_data(config: TrainingConfig) -> tuple[np.ndarray, np.ndarray]:
 
 
 def load_models(config: AggregationConfig) -> list[Any]:
-    """Load models for aggregation."""
-    files = get_dataset_files(config)
-    # Decrypt models using private key
+    """Load models for aggregation.
+    It either download models from urls or load them from input path.
+    """
+    data_array = []
+    if config.download_models:
+        with config.custom_data_path.open("r") as f:
+            conf = json.load(f)
+
+        for url in conf["model_urls"]:
+            res = requests.get(url)
+            data_array.append(res.content)
+
+    else:
+        files = get_dataset_files(config)
+        # Decrypt models using private key
+        for file_path in files:
+            with open(file_path, "rb") as f:
+                data_array.append(f.read())
+
     models = []
-    for file_path in files:
-        with open(file_path, "rb") as f:
-            data = decrypt_nacl(config.private_key, f.read())
-            models.append(load_model(data))
+    for val in data_array:
+        data = decrypt_nacl(config.private_key, val)
+        models.append(load_model(data))
 
     return models

@@ -18,7 +18,7 @@ def main(args_str: Optional[list[str]] = None, output_name: str = "model"):
     """
     args = parse_training_args(args_str)
     # Load data and model
-    model = load_model(args.input_folder / args.custom_data)
+    model = load_model(args.custom_data_path)
     data = load_data(args)
     # Train model
     model = train_model(model, data)
@@ -30,6 +30,7 @@ def main(args_str: Optional[list[str]] = None, output_name: str = "model"):
 
     # Save models into output
     save_output(output_name, enc_model, args)
+    print("Training finieshed.")
     return enc_model
 
 
