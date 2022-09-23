@@ -5,8 +5,6 @@ from nacl.public import PrivateKey
 
 from feltlabs.algorithm import aggregate, train
 from feltlabs.config import parse_training_args
-from feltlabs.core.aggregation import random_model, remove_noise_models
-from feltlabs.core.cryptography import decrypt_nacl
 from feltlabs.core.data import load_data
 from feltlabs.core.ocean import save_output
 from feltlabs.core.storage import load_model
@@ -16,7 +14,10 @@ from feltlabs.core.storage import load_model
 aggregation_key = PrivateKey.generate()
 scientist_key = PrivateKey.generate()
 
-model_def = {"model_name": "LinearRegression"}
+model_def = {
+    "model_type": "sklearn",
+    "model_name": "LinearRegression",
+}
 
 
 def test_training(tmp_path):
@@ -61,9 +62,8 @@ def test_training(tmp_path):
 
     ### Test final results ###
     final_model = load_model(enc_final_model)
-    rand_models = [random_model(final_model, s) for s in seeds]
-    model = remove_noise_models(final_model, rand_models)
+    final_model.remove_noise_models(seeds)
 
     # Predict
     data = load_data(args)
-    model.predict(data[0])
+    final_model.predict(data[0])

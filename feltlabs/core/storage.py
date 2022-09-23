@@ -1,29 +1,35 @@
 """Module for storing and managing data files."""
+import json
 from typing import Any, Optional
 
-from feltlabs.core import sklearn_to_json
 from feltlabs.core.cryptography import encrypt_nacl
-from feltlabs.typing import FileType, Model, PathType
+from feltlabs.core.models import analytics_model, sklearn_model
+from feltlabs.typing import BaseModel, FileType
 
 
-def load_model(filename: FileType) -> Model:
-    """Abstraction function for loading models.
+def load_model(file: FileType) -> BaseModel:
+    """Load model from json file (intended for use in 3rd party programs).
 
     Args:
-        filename: filepath or file-like object to load
+        file: path to json file containing model produced by FELT labs.
 
     Returns:
-        model object
+        scikit-learn model
     """
-    return sklearn_to_json.import_model(filename)
+    if type(file) is bytes:
+        data = json.loads(file)
+    else:
+        with open(file, "r") as f:
+            data = json.load(f)
+
+    if data["model_type"] == "sklearn":
+        return sklearn_model.Model(data)
+    # elif data["model_type"] == "analytics":
+    #     return analytics_model.import_model(data)
+    raise Exception("Invalid model type.")
 
 
-def export_model(model: Model, path: Optional[PathType] = None) -> bytes:
-    """Abstraction function for exporting model to file."""
-    return sklearn_to_json.export_model(model, path)
-
-
-def encrypt_model(model: Any, public_key: bytes) -> bytes:
+def encrypt_model(model: BaseModel, public_key: bytes) -> bytes:
     """Encrypt final model using provided public key.
 
     Args:
@@ -33,6 +39,6 @@ def encrypt_model(model: Any, public_key: bytes) -> bytes:
     Returns:
         encrypted model as bytes
     """
-    model_bytes = export_model(model)
+    model_bytes = model.export_model()
     encrypted_model = encrypt_nacl(public_key, model_bytes)
     return encrypted_model

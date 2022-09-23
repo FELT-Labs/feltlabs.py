@@ -3,20 +3,7 @@ import argparse
 import pickle
 from pathlib import Path
 
-from feltlabs.core.sklearn_to_json import import_model
-from feltlabs.typing import Model, PathType
-
-
-def load_model(path: PathType) -> Model:
-    """Load model from json file (intended for use in 3rd party programs).
-
-    Args:
-        path: path to json file containing model produced by FELT labs.
-
-    Returns:
-        scikit-learn model
-    """
-    return import_model(path)
+from feltlabs.core.storage import load_model
 
 
 def main():
