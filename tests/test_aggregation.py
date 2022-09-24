@@ -47,7 +47,7 @@ def test_sklearn_linreg_aggregation():
 
 
 def test_analytics_sum_aggregation():
-    model_data = {"model_type": "analytics", "model_name": "sum"}
+    model_data = {"model_type": "analytics", "model_name": "Sum"}
 
     model1 = analytics_model.Model(model_data)
     model1.fit(X, y[0])
@@ -88,7 +88,7 @@ def test_analytics_sum_aggregation():
 
 
 def test_analytics_mean_aggregation():
-    model_data = {"model_type": "analytics", "model_name": "mean"}
+    model_data = {"model_type": "analytics", "model_name": "Mean"}
 
     model1 = analytics_model.Model(model_data)
     model1.fit(X, y[0])

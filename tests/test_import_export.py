@@ -28,7 +28,7 @@ def test_sklearn_import_export(tmp_path):
 
 
 def test_analytics_import_export(tmp_path):
-    model_data = {"model_type": "analytics", "model_name": "sum"}
+    model_data = {"model_type": "analytics", "model_name": "Sum"}
 
     model = analytics_model.Model(model_data)
     model.fit(X, y)

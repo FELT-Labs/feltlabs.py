@@ -29,13 +29,13 @@ class Metric:
 
 
 SUPPORTED_MODELS = {
-    "sum": Metric(
+    "Sum": Metric(
         scale_rand=True,
         fit_fn=lambda x: np.sum(x, axis=0),
         agg_fn=lambda vals, _: np.sum(vals, axis=0),
         remove_fn=lambda rands, weights: -np.sum(rands, axis=0),
     ),
-    "mean": Metric(
+    "Mean": Metric(
         scale_rand=False,
         fit_fn=lambda x: np.mean(x, axis=0),
         agg_fn=lambda vals, weights: (weights.T @ vals) / np.sum(weights, axis=0),
