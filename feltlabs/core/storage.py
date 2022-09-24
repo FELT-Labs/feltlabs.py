@@ -24,8 +24,8 @@ def load_model(file: FileType) -> BaseModel:
 
     if data["model_type"] == "sklearn":
         return sklearn_model.Model(data)
-    # elif data["model_type"] == "analytics":
-    #     return analytics_model.import_model(data)
+    elif data["model_type"] == "analytics":
+        return analytics_model.Model(data)
     raise Exception("Invalid model type.")
 
 

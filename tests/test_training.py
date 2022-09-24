@@ -10,6 +10,7 @@ from feltlabs.core.ocean import save_output
 from feltlabs.core.storage import load_model
 
 # data = np.array([[0, 0], [1, 1], [2, 2]]), np.array([0, 1, 2])
+# Right now it uses test dataset
 
 aggregation_key = PrivateKey.generate()
 scientist_key = PrivateKey.generate()
