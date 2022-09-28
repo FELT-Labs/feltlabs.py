@@ -13,6 +13,8 @@ ATTRIBUTE_LIST = ["coef_", "intercept_", "coefs_", "intercepts_", "classes_", "n
 SUPPORTED_MODELS = {
     "LogisticRegression": linear_model.LogisticRegression,
     "LinearRegression": linear_model.LinearRegression,
+    "Lasso": linear_model.Ridge,
+    "Ridge": linear_model.Ridge,
 }
 
 

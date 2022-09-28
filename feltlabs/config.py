@@ -20,6 +20,7 @@ class TrainingConfig(OceanConfig):
     aggregation_key: bytes
     data_type: str
     seed: int
+    target_column: int
 
 
 class AggregationConfig(OceanConfig):
@@ -95,6 +96,12 @@ def parse_training_args(args_str: Optional[list[str]] = None) -> TrainingConfig:
         help="Select type of data. For csv last column is used as Y.",
     )
     parser.add_argument(
+        "--target_column",
+        type=int,
+        default=-1,
+        help="Select index of target column.",
+    )
+    parser.add_argument(
         "--seed",
         type=int,
         default=42,
@@ -105,6 +112,9 @@ def parse_training_args(args_str: Optional[list[str]] = None) -> TrainingConfig:
     conf = _add_ocean_config(cast(OceanConfig, args))
     args.data_type = conf["data_type"] if "data_type" in conf else args.data_type
     args.seed = conf["seed"] if "seed" in conf else args.seed
+    args.target_column = (
+        conf["target_column"] if "target_column" in conf else args.target_column
+    )
 
     args.aggregation_key = bytes.fromhex(args.aggregation_key)
 

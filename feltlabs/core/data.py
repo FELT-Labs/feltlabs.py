@@ -25,8 +25,12 @@ def load_data(config: TrainingConfig) -> tuple[np.ndarray, np.ndarray]:
             X, y = [], []
             for f in files:
                 data = np.genfromtxt(f, delimiter=",")
-                X.append(data[:, :-1])
-                y.append(data[:, -1])
+                # Get target column index (using modulo to get be positive index)
+                index = config.target_column % data.shape[1]
+                X.append(
+                    np.concatenate([data[:, :index], data[:, index + 1 :]], axis=1)
+                )
+                y.append(data[:, index])
 
             return np.concatenate(X, axis=0), np.concatenate(y, axis=0)
 

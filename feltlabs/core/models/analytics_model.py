@@ -20,12 +20,14 @@ class Metric:
         fit_fn: function for calculating metric on original data
         agg_fun: aggregation function for combining results from different models
         remove_fn: function used for calculate negative of aggregated noise model
+        output_fn: function used to calculate final value
     """
 
     scale_rand: bool
     fit_fn: Callable
     agg_fn: Callable
     remove_fn: Callable
+    output_fn: Callable = lambda x, _: x
 
 
 SUPPORTED_MODELS = {
@@ -33,13 +35,43 @@ SUPPORTED_MODELS = {
         scale_rand=True,
         fit_fn=lambda x: np.sum(x, axis=0),
         agg_fn=lambda vals, _: np.sum(vals, axis=0),
-        remove_fn=lambda rands, weights: -np.sum(rands, axis=0),
+        remove_fn=lambda rands, _: -np.sum(rands, axis=0),
     ),
     "Mean": Metric(
         scale_rand=False,
         fit_fn=lambda x: np.mean(x, axis=0),
         agg_fn=lambda vals, weights: (weights.T @ vals) / np.sum(weights, axis=0),
         remove_fn=lambda rands, weights: -(weights.T @ rands) / np.sum(weights, axis=0),
+    ),
+    "Variance": Metric(
+        # Calculating variance using sums should be numerically more stable
+        scale_rand=False,
+        fit_fn=lambda x: np.array(
+            [
+                np.sum(np.power(x, 2), axis=0),
+                np.sum(x, axis=0),
+            ]
+        ),
+        agg_fn=lambda vals, _: np.sum(vals, axis=0),
+        remove_fn=lambda rands, _: -np.sum(rands, axis=0),
+        output_fn=lambda vals, size: abs(
+            (vals[0] - vals[1] ** 2 / sum(size)) / sum(size)
+        ),
+    ),
+    "Std": Metric(
+        # Calculating variance using sums should be numerically more stable
+        scale_rand=False,
+        fit_fn=lambda x: np.array(
+            [
+                np.sum(np.power(x, 2), axis=0),
+                np.sum(x, axis=0),
+            ]
+        ),
+        agg_fn=lambda vals, _: np.sum(vals, axis=0),
+        remove_fn=lambda rands, _: -np.sum(rands, axis=0),
+        output_fn=lambda vals, size: np.sqrt(
+            np.abs((vals[0] - vals[1] ** 2 / sum(size)) / sum(size))
+        ),
     ),
 }
 
@@ -188,5 +220,7 @@ class Model(BaseModel):
         Args:
             X: array like data used for prediciton of shape (n_samples, n_features)
         """
-        print(f"{self.model_name} value is {self.model['value']}")
-        return self.model["value"]
+        print(
+            f"{self.model_name} value is {self.metric.output_fn(self.model['value'], self.sample_size)}"
+        )
+        return self.metric.output_fn(self.model["value"], self.sample_size)
