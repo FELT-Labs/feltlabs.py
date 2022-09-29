@@ -2,11 +2,9 @@
 from typing import Optional
 
 from feltlabs.config import parse_training_args
-from feltlabs.core.aggregation import random_model, sum_models
 from feltlabs.core.data import load_data
 from feltlabs.core.ocean import save_output
 from feltlabs.core.storage import encrypt_model, load_model
-from feltlabs.core.training import train_model
 
 
 def main(args_str: Optional[list[str]] = None, output_name: str = "model"):
@@ -17,14 +15,13 @@ def main(args_str: Optional[list[str]] = None, output_name: str = "model"):
         output_name: name of output model
     """
     args = parse_training_args(args_str)
-    # Load data and model
+    # Load model
     model = load_model(args.custom_data_path)
-    data = load_data(args)
-    # Train model
-    model = train_model(model, data)
+    # Load data and train model
+    X, y = load_data(args)
+    model.fit(X, y)
     # Add randomness to model
-    rand_model = random_model(model, args.seed)
-    model = sum_models([model, rand_model])
+    model.add_noise(args.seed)
     # Encrypt model using public key of aggregation
     enc_model = encrypt_model(model, args.aggregation_key)
 

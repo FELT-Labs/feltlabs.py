@@ -2,10 +2,9 @@
 from typing import Optional
 
 from feltlabs.config import parse_aggregation_args
-from feltlabs.core.aggregation import aggregate_models
 from feltlabs.core.data import load_models
 from feltlabs.core.ocean import save_output
-from feltlabs.core.storage import encrypt_model, export_model
+from feltlabs.core.storage import encrypt_model
 
 
 def main(args_str: Optional[list[str]] = None, output_name: str = "model"):
@@ -19,12 +18,13 @@ def main(args_str: Optional[list[str]] = None, output_name: str = "model"):
     # Load models
     models = load_models(args)
     # Aggregate
-    model = aggregate_models(models)
+    model, *other_models = models
+    model.aggregate(other_models)
     # Encrypt final model using scientist public key if provided
     if args.public_key:
         model = encrypt_model(model, args.public_key)
     else:
-        model = export_model(model)
+        model = model.export_model()
     # Save model (bytes) into output
     save_output(output_name, model, args)
     print("Aggregation finieshed.")
