@@ -85,7 +85,7 @@ class Model(BaseModel):
         ), f"Can't generate random models. Num seeds ({len(seeds)}) and sizes ({len(self.sample_size)}) missmatch."
 
         models = []
-        # Right now we are not using "size" for the sklearn models
+        # TODO: Right now we are not using "size" for the sklearn models
         for seed, size in zip(seeds, self.sample_size):
             randomness.set_seed(seed)
 
@@ -128,7 +128,7 @@ class Model(BaseModel):
         """
         params = {}
         for p in ATTRIBUTE_LIST:
-            if hasattr(self.model, p):
+            if hasattr(self.model, p) and getattr(self.model, p) is not None:
                 params[p] = (
                     getattr(self.model, p).tolist()
                     if to_list
