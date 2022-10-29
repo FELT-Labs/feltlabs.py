@@ -1,6 +1,7 @@
 """Module for loading data provider (Node) config."""
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Optional, cast
 
@@ -21,6 +22,7 @@ class TrainingConfig(OceanConfig):
     data_type: str
     seed: int
     target_column: int
+    solo_training: bool
 
 
 class AggregationConfig(OceanConfig):
@@ -80,7 +82,10 @@ def parse_training_args(args_str: Optional[list[str]] = None) -> TrainingConfig:
         Parsed args object
     """
     parser = argparse.ArgumentParser(
-        description="Script for training models, possible to execute from command line."
+        description="""
+            Script for training models, possible to execute from command line.
+            At least one of the flags --solo_training or --aggregation_key KEY must be set.
+        """
     )
     parser = _ocean_parser(parser)
     parser.add_argument(
@@ -102,6 +107,12 @@ def parse_training_args(args_str: Optional[list[str]] = None) -> TrainingConfig:
         help="Select index of target column.",
     )
     parser.add_argument(
+        "--solo_training",
+        action="store_true",
+        default=False,
+        help="If true (flag included), it will run training on single dataset without encryption.",
+    )
+    parser.add_argument(
         "--seed",
         type=int,
         default=42,
@@ -116,7 +127,13 @@ def parse_training_args(args_str: Optional[list[str]] = None) -> TrainingConfig:
         conf["target_column"] if "target_column" in conf else args.target_column
     )
 
-    args.aggregation_key = bytes.fromhex(args.aggregation_key)
+    if not args.solo_training and not args.aggregation_key:
+        # At least one of solo_training or aggregation_key must be set (else exit)
+        parser.print_help()
+        sys.exit(2)
+
+    if not args.solo_training:
+        args.aggregation_key = bytes.fromhex(args.aggregation_key)
 
     return cast(TrainingConfig, args)
 
@@ -148,7 +165,7 @@ def parse_aggregation_args(args_str: Optional[list[str]] = None) -> AggregationC
     )
     parser.add_argument(
         "--download_models",
-        help="If true, models will be donwloaded from provided URLs",
+        help="If true (flag included), models will be donwloaded from provided URLs",
         action="store_true",
         default=False,
     )
