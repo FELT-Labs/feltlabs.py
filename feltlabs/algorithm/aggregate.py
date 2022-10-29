@@ -17,6 +17,10 @@ def main(args_str: Optional[list[str]] = None, output_name: str = "model"):
     args = parse_aggregation_args(args_str)
     # Load models
     models = load_models(args)
+    if len(models) < args.min_models:
+        raise Exception(
+            f"Not enough models for aggregation, loaded {len(models)} models (required {args.min_models})."
+        )
     # Aggregate
     model, *other_models = models
     model.aggregate(other_models)

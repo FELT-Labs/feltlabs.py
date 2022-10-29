@@ -29,6 +29,15 @@ class AggregationConfig(OceanConfig):
     private_key: bytes
     public_key: bytes
     download_models: bool
+    min_models: int
+
+
+def _help_exit(parser, error_msg=None):
+    """Print help of parser and quit the script."""
+    parser.print_help()
+    if error_msg:
+        print(f"\nERROR: {error_msg}")
+    sys.exit(2)
 
 
 def _add_ocean_config(config: OceanConfig) -> dict[str, str]:
@@ -85,7 +94,8 @@ def parse_training_args(args_str: Optional[list[str]] = None) -> TrainingConfig:
         description="""
             Script for training models, possible to execute from command line.
             At least one of the flags --solo_training or --aggregation_key KEY must be set.
-        """
+        """,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser = _ocean_parser(parser)
     parser.add_argument(
@@ -129,8 +139,9 @@ def parse_training_args(args_str: Optional[list[str]] = None) -> TrainingConfig:
 
     if not args.solo_training and not args.aggregation_key:
         # At least one of solo_training or aggregation_key must be set (else exit)
-        parser.print_help()
-        sys.exit(2)
+        _help_exit(
+            parser, "At least one of --solo_training, --aggregation_key must be set"
+        )
 
     if not args.solo_training:
         args.aggregation_key = bytes.fromhex(args.aggregation_key)
@@ -149,7 +160,8 @@ def parse_aggregation_args(args_str: Optional[list[str]] = None) -> AggregationC
         Parsed args object
     """
     parser = argparse.ArgumentParser(
-        description="Script for training models, possible to execute from command line."
+        description="Script for training models, possible to execute from command line.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser = _ocean_parser(parser)
     parser.add_argument(
@@ -164,6 +176,12 @@ def parse_aggregation_args(args_str: Optional[list[str]] = None) -> AggregationC
         default=None,
     )
     parser.add_argument(
+        "--min_models",
+        type=int,
+        default=2,
+        help="Minimum number of models required for aggregation (agg fails otherwise).",
+    )
+    parser.add_argument(
         "--download_models",
         help="If true (flag included), models will be donwloaded from provided URLs",
         action="store_true",
@@ -173,6 +191,10 @@ def parse_aggregation_args(args_str: Optional[list[str]] = None) -> AggregationC
 
     conf = _add_ocean_config(cast(OceanConfig, args))
     args.public_key = conf["public_key"] if "public_key" in conf else args.public_key
+
+    if not args.private_key:
+        # Private key is required
+        _help_exit(parser, "Private key is not defined.")
 
     args.private_key = bytes.fromhex(args.private_key)
     if args.public_key:
