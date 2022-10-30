@@ -1,6 +1,7 @@
 """Test training process."""
 import json
 
+import pytest
 from nacl.public import PrivateKey
 
 from feltlabs.algorithm import aggregate, train
@@ -43,7 +44,6 @@ def test_training(tmp_path):
 
     # Define extra args with different output folder
     args = parse_training_args(args_str.split())
-    args.output_folder = output_folder2
 
     for i in range(2):
         args_str_final = f"{args_str} --seed {i}"
@@ -56,7 +56,7 @@ def test_training(tmp_path):
 
     ### Aggregation section ###
     args_str = f"--output_folder {output_folder2}"
-    args_str += f" --input_folder {output_folder2}"
+    args_str += f" --input_folder {output_folder}"
     args_str += f" --private_key {bytes(aggregation_key).hex()}"
 
     enc_final_model = aggregate.main(args_str.split(), "final_model")
@@ -68,3 +68,13 @@ def test_training(tmp_path):
     # Predict
     data = load_data(args)
     final_model.predict(data[0])
+
+    ### Aggregation section ###
+    args_str = f"--output_folder {output_folder2}"
+    args_str += f" --input_folder {output_folder}"
+    args_str += f" --private_key {bytes(aggregation_key).hex()}"
+    args_str += f" --min_models 3"
+
+    with pytest.raises(Exception):
+        # Should fail because at least 3 models are required
+        enc_final_model = aggregate.main(args_str.split(), "final_model")

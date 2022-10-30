@@ -1,5 +1,7 @@
 """Module for loading data and models."""
+import csv
 import json
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -9,6 +11,13 @@ from feltlabs.config import AggregationConfig, TrainingConfig
 from feltlabs.core.cryptography import decrypt_nacl
 from feltlabs.core.ocean import get_dataset_files
 from feltlabs.core.storage import load_model
+
+
+def _check_csv_header(file: Path):
+    """Check given CSV file if it contains header."""
+    with file.open() as f:
+        lines = "".join(f.readline() for i in range(5))
+        return csv.Sniffer().has_header(lines)
 
 
 # TODO: Add model type
@@ -23,8 +32,10 @@ def load_data(config: TrainingConfig) -> tuple[np.ndarray, np.ndarray]:
         files = get_dataset_files(config)
         if config.data_type == "csv":
             X, y = [], []
-            for f in files:
-                data = np.genfromtxt(f, delimiter=",")
+            for file in files:
+                # Check for header
+                has_header = _check_csv_header(file)
+                data = np.genfromtxt(file, delimiter=",", skip_header=has_header)
                 # Get target column index (using modulo to get be positive index)
                 index = config.target_column % data.shape[1]
                 X.append(

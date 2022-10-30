@@ -20,15 +20,19 @@ def main(args_str: Optional[list[str]] = None, output_name: str = "model"):
     # Load data and train model
     X, y = load_data(args)
     model.fit(X, y)
-    # Add randomness to model
-    model.add_noise(args.seed)
-    # Encrypt model using public key of aggregation
-    enc_model = encrypt_model(model, args.aggregation_key)
+
+    if args.solo_training:
+        model = model.export_model()
+    else:
+        # Add randomness to model
+        model.add_noise(args.seed)
+        # Encrypt model using public key of aggregation
+        model = encrypt_model(model, args.aggregation_key)
 
     # Save models into output
-    save_output(output_name, enc_model, args)
-    print("Training finieshed.")
-    return enc_model
+    save_output(output_name, model, args)
+    print("Training finished.")
+    return model
 
 
 if __name__ == "__main__":
