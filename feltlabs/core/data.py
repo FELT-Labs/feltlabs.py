@@ -1,6 +1,7 @@
 """Module for loading data and models."""
 import csv
 import json
+import pickle
 from pathlib import Path
 from typing import Any
 
@@ -9,11 +10,11 @@ import requests
 
 from feltlabs.config import AggregationConfig, TrainingConfig
 from feltlabs.core.cryptography import decrypt_nacl
-from feltlabs.core.ocean import get_dataset_files
+from feltlabs.core.ocean import get_datasets
 from feltlabs.core.storage import load_model
 
 
-def _check_csv_header(file: Path):
+def _has_csv_header(file: Path) -> bool:
     """Check given CSV file if it contains header."""
     with file.open() as f:
         lines = "".join(f.readline() for i in range(5))
@@ -28,13 +29,19 @@ def load_data(config: TrainingConfig) -> tuple[np.ndarray, np.ndarray]:
         X = np.random.rand(100, 10)
         y = np.random.rand(100)
         return X, y
-    else:
-        files = get_dataset_files(config)
-        if config.data_type == "csv":
-            X, y = [], []
-            for file in files:
+
+    datasets = get_datasets(config)
+
+    X, y = [], []
+    for dataset in datasets.values():
+        data_type = (
+            config.data_type if dataset.data_type == "default" else dataset.data_type
+        )
+
+        for file, index in dataset.files:
+            if data_type == "csv":
                 # Check for header
-                has_header = _check_csv_header(file)
+                has_header = _has_csv_header(file)
                 data = np.genfromtxt(file, delimiter=",", skip_header=has_header)
                 # Get target column index (using modulo to get be positive index)
                 index = config.target_column % data.shape[1]
@@ -43,9 +50,17 @@ def load_data(config: TrainingConfig) -> tuple[np.ndarray, np.ndarray]:
                 )
                 y.append(data[:, index])
 
-            return np.concatenate(X, axis=0), np.concatenate(y, axis=0)
+            elif data_type == "pickle":
+                with file.open("rb") as f:
+                    data = pickle.load(f)
 
-    raise Exception("No data loaded.")
+                # TODO: Do something with the index (probably tabular/tuple data)
+                X.append(data[0])
+                y.append(data[-1])
+
+    assert len(y) > 0, "No data loaded"
+
+    return np.concatenate(X, axis=0), np.concatenate(y, axis=0)
 
 
 def load_models(config: AggregationConfig) -> list[Any]:
@@ -62,11 +77,11 @@ def load_models(config: AggregationConfig) -> list[Any]:
             data_array.append(res.content)
 
     else:
-        files = get_dataset_files(config)
-        # Decrypt models using private key
-        for file_path in files:
-            with open(file_path, "rb") as f:
-                data_array.append(f.read())
+        # Models passed as dataset
+        for dataset in get_datasets(config).values():
+            for file_path, _ in dataset.files:
+                with open(file_path, "rb") as f:
+                    data_array.append(f.read())
 
     models = []
     for val in data_array:

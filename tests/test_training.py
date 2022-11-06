@@ -1,5 +1,6 @@
 """Test training process."""
 import json
+from pathlib import Path
 
 import pytest
 from nacl.public import PrivateKey
@@ -22,13 +23,13 @@ model_def = {
 }
 
 
-def test_training(tmp_path):
+def test_training(tmp_path: Path):
     input_folder = tmp_path / "input"
-    output_folder = tmp_path / "output"
+    output_folder = tmp_path / "output" / "fake_did"
     output_folder2 = tmp_path / "output2"
 
     input_folder.mkdir()
-    output_folder.mkdir()
+    output_folder.mkdir(parents=True)
     output_folder2.mkdir()
 
     # Create custom data file (containing model definition)
@@ -47,16 +48,14 @@ def test_training(tmp_path):
 
     for i in range(2):
         args_str_final = f"{args_str} --seed {i}"
-        enc_model = train.main(args_str_final.split(), f"model_{i}")
-
-        save_output(f"model_{i}", enc_model, args)
+        enc_model = train.main(args_str_final.split(), f"{i}")
 
         enc_models.append(enc_model)
         seeds.append(i)
 
     ### Aggregation section ###
     args_str = f"--output_folder {output_folder2}"
-    args_str += f" --input_folder {output_folder}"
+    args_str += f" --input_folder {output_folder.parent}"
     args_str += f" --private_key {bytes(aggregation_key).hex()}"
 
     enc_final_model = aggregate.main(args_str.split(), "final_model")

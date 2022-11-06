@@ -1,5 +1,6 @@
 """Test training process."""
 import json
+from pathlib import Path
 
 from feltlabs.algorithm import train
 from feltlabs.config import parse_training_args
@@ -16,7 +17,7 @@ model_def = {
 }
 
 
-def test_training(tmp_path):
+def test_training(tmp_path: Path):
     input_folder = tmp_path / "input"
     output_folder = tmp_path / "output"
 

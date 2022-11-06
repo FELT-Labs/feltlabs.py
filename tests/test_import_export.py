@@ -1,4 +1,6 @@
 """Testing import/export to json."""
+from pathlib import Path
+
 import numpy as np
 
 from feltlabs.core.models import analytics_model, sklearn_model
@@ -7,7 +9,7 @@ from feltlabs.core.storage import load_model
 X, y = [[0, 0], [1, 1], [2, 2]], [0, 1, 2]
 
 
-def test_sklearn_linreg_import_export(tmp_path):
+def test_sklearn_linreg_import_export(tmp_path: Path):
     model_data = {"model_type": "sklearn", "model_name": "LinearRegression"}
 
     model = sklearn_model.Model(model_data)
@@ -27,7 +29,7 @@ def test_sklearn_linreg_import_export(tmp_path):
     assert np.array_equal(im_model.predict(X), model.predict(X))
 
 
-def test_sklearn_ridge_import_export(tmp_path):
+def test_sklearn_ridge_import_export(tmp_path: Path):
     model_data = {
         "model_type": "sklearn",
         "model_name": "Ridge",
@@ -51,7 +53,7 @@ def test_sklearn_ridge_import_export(tmp_path):
     assert np.array_equal(im_model.predict(X), model.predict(X))
 
 
-def test_analytics_import_export(tmp_path):
+def test_analytics_import_export(tmp_path: Path):
     model_data = {"model_type": "analytics", "model_name": "Sum"}
 
     model = analytics_model.Model(model_data)
