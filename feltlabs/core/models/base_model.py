@@ -50,18 +50,18 @@ class BaseModel(ABC):
         """
         assert len(self.sample_size) == 1, "Can't add randomness to aggregated model."
         rand_model = self.get_random_models([seed])
-        self._agg_models_op(self.ops["sum_op"], rand_model)
+        self._agg_models_op(self.ops["sum_op"], rand_model, type_cast=False)
 
-    def _agg_models_op(self, op: Callable, models: list["BaseModel"]) -> None:
+    def _agg_models_op(
+        self, op: Callable, models: list["BaseModel"], type_cast: bool = True
+    ) -> None:
         """Perform aggregation operation on list of models.
 
         Args:
             op: function to run on on values, with definition fn(model_values, weights)
             models: list of models
+            type_cast: true if arrays should be casted to original type
         """
-        if len(models) == 0:
-            return
-
         models_params = [m._get_params() for m in [self, *models]]
         models_weights = np.array([m.sample_size[0] for m in [self, *models]])
 
@@ -73,7 +73,7 @@ class BaseModel(ABC):
 
             values = [params[param] for params in models_params]
             val = op(values, models_weights)
-            new_params[param] = val.astype(values[0].dtype)
+            new_params[param] = val.astype(values[0].dtype) if type_cast else val
 
         self._set_params(new_params)
 

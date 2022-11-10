@@ -23,4 +23,4 @@ def random_array_copy(array: NDArray, min: int, max: int) -> NDArray:
         New random array of same shape and type as original array
     """
     random_array = (max - min) * np.random.random(array.shape) + min
-    return random_array.astype(array.dtype)
+    return random_array

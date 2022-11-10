@@ -9,6 +9,7 @@ from sklearn import linear_model
 from feltlabs.core import randomness
 from feltlabs.typing import BaseModel, PathType
 
+# TODO: SVM attributes  ["dual_coef_", "support_", "support_vectors_", "_n_support"
 ATTRIBUTE_LIST = ["coef_", "intercept_", "coefs_", "intercepts_", "classes_", "n_iter_"]
 SUPPORTED_MODELS = {
     "LogisticRegression": linear_model.LogisticRegression,
@@ -87,11 +88,10 @@ class Model(BaseModel):
         models = []
         # TODO: Right now we are not using "size" for the sklearn models
         for seed, size in zip(seeds, self.sample_size):
-            randomness.set_seed(seed)
-
             params = self._get_params()
             new_params = {}
             for param, array in params.items():
+                randomness.set_seed(hash(f"{seed};{param}") % (2**32 - 1))
                 new_params[param] = randomness.random_array_copy(array, _min, _max)
 
             models.append(self.new_model(new_params))
@@ -111,9 +111,9 @@ class Model(BaseModel):
         op = lambda x, _: -1 * np.mean(x, axis=0)
 
         n_model, *other_models = noise_models
-        n_model._agg_models_op(op, other_models)
+        n_model._agg_models_op(op, other_models, type_cast=False)
 
-        self._agg_models_op(self.ops["sum_op"], [n_model])
+        self._agg_models_op(self.ops["sum_op"], [n_model], type_cast=False)
         # Update sample size, because now we have clean aggregated model
         self.sample_size = [sum(self.sample_size)]
 
