@@ -4,18 +4,38 @@ from typing import Any, Optional
 
 import numpy as np
 from numpy.typing import NDArray
-from sklearn import linear_model
+from sklearn import linear_model, neighbors, neural_network
 
 from feltlabs.core import randomness
 from feltlabs.typing import BaseModel, PathType
 
 # TODO: SVM attributes  ["dual_coef_", "support_", "support_vectors_", "_n_support"
-ATTRIBUTE_LIST = ["coef_", "intercept_", "coefs_", "intercepts_", "classes_", "n_iter_"]
+ATTRIBUTE_LIST = [
+    "coef_",
+    "intercept_",
+    "coefs_",
+    "intercepts_",
+    "classes_",
+    "n_iter_",
+    "centroids_",
+]
 SUPPORTED_MODELS = {
-    "LogisticRegression": linear_model.LogisticRegression,
+    # Regression
     "LinearRegression": linear_model.LinearRegression,
     "Lasso": linear_model.Ridge,
     "Ridge": linear_model.Ridge,
+    "ElasticNet": linear_model.ElasticNet,
+    "LassoLars": linear_model.LassoLars,
+    # Classification
+    "LogisticRegression": linear_model.LogisticRegression,
+    "SGDClassifier": linear_model.SGDClassifier,
+    # Clustering
+    "NearestCentroidClassifier": neighbors.NearestCentroid,
+    # Neural Networks
+    # TODO: Limit size of hidden layers
+    # TODO: serialize/deserialize list of numpy arrays
+    # "MLPClassifier": neural_network.MLPClassifier,
+    # "MLPRegressor": neural_network.MLPRegressor,
 }
 
 
@@ -92,7 +112,17 @@ class Model(BaseModel):
             new_params = {}
             for param, array in params.items():
                 randomness.set_seed(hash(f"{seed};{param}") % (2**32 - 1))
-                new_params[param] = randomness.random_array_copy(array, _min, _max)
+
+                if type(array) == NDArray:
+                    value = randomness.random_array_copy(array, _min, _max)
+                elif type(array) == list:
+                    value = [randomness.random_array_copy(a, _min, _max) for a in array]
+                else:
+                    value = randomness.random_array_copy(np.array([array]), _min, _max)[
+                        0
+                    ]
+
+                new_params[param] = value
 
             models.append(self.new_model(new_params))
         return models
