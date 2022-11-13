@@ -18,6 +18,7 @@ class BaseModel(ABC):
     model_type: str
     model_name: str
     sample_size: list[int] = [0]
+    is_dirty: bool  # True if randomness was added
 
     ops = {
         "sum_op": lambda x, _: np.sum(x, axis=0),
@@ -50,17 +51,15 @@ class BaseModel(ABC):
         """
         assert len(self.sample_size) == 1, "Can't add randomness to aggregated model."
         rand_model = self.get_random_models([seed])
-        self._agg_models_op(self.ops["sum_op"], rand_model, type_cast=False)
+        self._agg_models_op(self.ops["sum_op"], rand_model)
+        self.is_dirty = True
 
-    def _agg_models_op(
-        self, op: Callable, models: list["BaseModel"], type_cast: bool = True
-    ) -> None:
+    def _agg_models_op(self, op: Callable, models: list["BaseModel"]) -> None:
         """Perform aggregation operation on list of models.
 
         Args:
             op: function to run on on values, with definition fn(model_values, weights)
             models: list of models
-            type_cast: true if arrays should be casted to original type
         """
         models_params = [m._get_params() for m in [self, *models]]
         models_weights = np.array([m.sample_size[0] for m in [self, *models]])
@@ -73,8 +72,8 @@ class BaseModel(ABC):
 
             values = [params[param] for params in models_params]
             val = op(values, models_weights)
-            if isinstance(val, np.ndarray):
-                new_params[param] = val.astype(values[0].dtype) if type_cast else val
+            if isinstance(models_params[0][param], list):
+                new_params[param] = list(val)
             else:
                 new_params[param] = val
 

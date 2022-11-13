@@ -94,13 +94,15 @@ class Model(BaseModel):
 
         self.model_name = data["model_name"]
         self.metric = SUPPORTED_MODELS[data["model_name"]]
+        self.is_dirty = data.get("is_dirty", False)
 
         params = data.get("model_params", {})
         self._set_params(params)
 
         self.sample_size = data.get("sample_size", self.sample_size)
-        # Substract random models (generated from seeds) from loaded model
-        self.remove_noise_models(data.get("seeds", []))
+        if self.is_dirty:
+            # Substract random models (generated from seeds) from loaded model
+            self.remove_noise_models(data.get("seeds", []))
 
     def export_model(self, filename: Optional[PathType] = None) -> bytes:
         """Export sklean model to JSON file or return it as bytes.
@@ -114,6 +116,7 @@ class Model(BaseModel):
         data = {
             "model_type": self.model_type,
             "model_name": self.model_name,
+            "is_dirty": self.is_dirty,
             "model_params": self._get_params(),
             "sample_size": self.sample_size,
         }
@@ -162,7 +165,7 @@ class Model(BaseModel):
         Args:
             seeds: list of seeds used for generating random models
         """
-        if len(seeds) == 0:
+        if len(seeds) == 0 or not self.is_dirty:
             return
 
         noise_models = self.get_random_models(seeds)
@@ -173,6 +176,7 @@ class Model(BaseModel):
         self._agg_models_op(self.ops["sum_op"], [n_model])
         # Update sample size, because now we have clean aggregated model
         self.sample_size = [sum(self.sample_size)]
+        self.is_dirty = False
 
     def _get_params(self) -> dict[str, NDArray]:
         """Get dictionary of model parameters.

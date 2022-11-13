@@ -62,8 +62,6 @@ def test_sklearn_lasso_aggregation():
 
     assert np.allclose(model1.predict(X), y[0], atol=0.20)
     assert np.allclose(model2.predict(X), y[1], atol=0.20)
-    #
-    print(model1.model.__dict__)
 
     agg_model = model1.new_model()
     agg_model.aggregate([model2])
@@ -105,8 +103,6 @@ def test_sklearn_ridge_aggregation():
 
     assert np.allclose(model1.predict(X), y[0], atol=0.20)
     assert np.allclose(model2.predict(X), y[1], atol=0.20)
-    #
-    print(model1.model.__dict__)
 
     agg_model = model1.new_model()
     agg_model.aggregate([model2])

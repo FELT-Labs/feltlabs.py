@@ -27,7 +27,6 @@ def test_csv_load(tmp_path: Path):
     # Define extra args with different output folder
     args = parse_training_args(args_str.split())
     X, y = load_data(args)
-    print(y)
 
     assert len(X) == len(y), "Size of X and y are not matching"
     assert len(X) == 2 * 5, "Not all data loaded"
@@ -73,7 +72,6 @@ def test_data_config_load(tmp_path: Path):
         "notInUse"  # Just test that data_type will be taken from config file
     )
     X, y = load_data(args)
-    print(y)
 
     assert len(X) == len(y), "Size of X and y are not matching"
     assert len(X) == 2 * 5, "Not all data loaded"
