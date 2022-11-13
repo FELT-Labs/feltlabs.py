@@ -1,5 +1,4 @@
 """Test training process."""
-import json
 from pathlib import Path
 
 import pytest
@@ -8,7 +7,7 @@ from nacl.public import PrivateKey
 from feltlabs.algorithm import aggregate, train
 from feltlabs.config import parse_training_args
 from feltlabs.core.data import load_data
-from feltlabs.core.ocean import save_output
+from feltlabs.core.json_handler import json_dump
 from feltlabs.core.storage import load_model
 
 # data = np.array([[0, 0], [1, 1], [2, 2]]), np.array([0, 1, 2])
@@ -33,8 +32,8 @@ def test_training(tmp_path: Path):
     output_folder2.mkdir()
 
     # Create custom data file (containing model definition)
-    with open(input_folder / "algoCustomData.json", "w") as f:
-        json.dump(model_def, f)
+    with open(input_folder / "algoCustomData.json", "wb") as f:
+        f.write(json_dump(model_def))
 
     enc_models, seeds = [], []
 

@@ -1,10 +1,10 @@
 """Test training process."""
-import json
 from pathlib import Path
 
 from feltlabs.algorithm import train
 from feltlabs.config import parse_training_args
 from feltlabs.core.data import load_data
+from feltlabs.core.json_handler import json_dump
 from feltlabs.core.storage import load_model
 from feltlabs.model import load_model
 
@@ -25,8 +25,8 @@ def test_training(tmp_path: Path):
     output_folder.mkdir()
 
     # Create custom data file (containing model definition)
-    with open(input_folder / "algoCustomData.json", "w") as f:
-        json.dump(model_def, f)
+    with open(input_folder / "algoCustomData.json", "wb") as f:
+        f.write(json_dump(model_def))
 
     ### Training section ###
     args_str = f"--output_folder {output_folder}"

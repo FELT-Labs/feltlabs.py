@@ -1,5 +1,4 @@
 """Module for importing/exporting sklearn models to json."""
-import json
 from typing import Any, Optional
 
 import numpy as np
@@ -7,6 +6,7 @@ from numpy.typing import NDArray
 from sklearn import linear_model, neighbors, neural_network
 
 from feltlabs.core import randomness
+from feltlabs.core.json_handler import json_dump
 from feltlabs.typing import BaseModel, PathType
 
 # TODO: SVM attributes  ["dual_coef_", "support_", "support_vectors_", "_n_support"
@@ -58,7 +58,7 @@ class Model(BaseModel):
         model_class = SUPPORTED_MODELS[self.model_name]
         self.model = model_class(**data.get("init_params", {}))
 
-        params = {p: np.array(v) for p, v in data.get("model_params", {}).items()}
+        params = data.get("model_params", {})
         self._set_params(params)
 
         self.sample_size = data.get("sample_size", self.sample_size)
@@ -78,15 +78,16 @@ class Model(BaseModel):
             "model_type": self.model_type,
             "model_name": self.model_name,
             "init_params": self.model.get_params(),  # Get params of sklearn models
-            "model_params": self._get_params(to_list=True),
+            "model_params": self._get_params(),
             "sample_size": self.sample_size,
         }
 
+        data_bytes = json_dump(data)
         if filename:
-            with open(filename, "w") as f:
-                json.dump(data, f)
+            with open(filename, "wb") as f:
+                f.write(data_bytes)
 
-        return bytes(json.dumps(data), "utf-8")
+        return data_bytes
 
     def get_random_models(
         self, seeds: list[int], _min: int = -100, _max: int = 100
@@ -147,11 +148,8 @@ class Model(BaseModel):
         # Update sample size, because now we have clean aggregated model
         self.sample_size = [sum(self.sample_size)]
 
-    def _get_params(self, to_list: bool = False) -> dict[str, NDArray]:
+    def _get_params(self) -> dict[str, NDArray]:
         """Get dictionary of model parameters.
-
-        Args:
-            to_list: flag to convert numpy arrays to lists (used for export)
 
         Returns:
             dictionary of parameters as name to numpy array
@@ -159,11 +157,7 @@ class Model(BaseModel):
         params = {}
         for p in ATTRIBUTE_LIST:
             if hasattr(self.model, p) and getattr(self.model, p) is not None:
-                params[p] = (
-                    getattr(self.model, p).tolist()
-                    if to_list
-                    else getattr(self.model, p)
-                )
+                params[p] = getattr(self.model, p)
         return params
 
     def _set_params(self, params: dict[str, NDArray]) -> None:

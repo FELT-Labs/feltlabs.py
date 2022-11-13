@@ -73,7 +73,10 @@ class BaseModel(ABC):
 
             values = [params[param] for params in models_params]
             val = op(values, models_weights)
-            new_params[param] = val.astype(values[0].dtype) if type_cast else val
+            if isinstance(val, np.ndarray):
+                new_params[param] = val.astype(values[0].dtype) if type_cast else val
+            else:
+                new_params[param] = val
 
         self._set_params(new_params)
 
@@ -149,11 +152,8 @@ class BaseModel(ABC):
         """
 
     @abstractmethod
-    def _get_params(self, to_list: bool = False) -> dict[str, NDArray]:
+    def _get_params(self) -> dict[str, NDArray]:
         """Get dictionary of model parameters.
-
-        Args:
-            to_list: flag to convert numpy arrays to lists (used for export)
 
         Returns:
             dictionary of parameters as name to numpy array
