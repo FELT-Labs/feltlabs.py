@@ -9,9 +9,6 @@ from feltlabs.core import randomness
 from feltlabs.core.json_handler import json_dump
 from feltlabs.typing import BaseModel, PathType
 
-# TODO: we need to set warm_start=True for multiple rounds!!!
-#     - maybe need to reset _no_improvement_count and max_iter (n_iter_)
-
 # TODO: SVM attributes  ["dual_coef_", "support_", "support_vectors_", "_n_support"
 # Attributes and data type casting for them (done only after removing randomness)
 ATTRIBUTE_LIST = {
@@ -26,11 +23,11 @@ ATTRIBUTE_LIST = {
     "n_outputs_": round,
     # Needed by MLPClassifier
     "t_": round,
+    "loss_curve_": None,
+    "best_loss_": None,
 }
 FIXED_ATTRIBUTE_LIST = [
     "out_activation_",
-    "loss_curve_",
-    "best_loss_",
     "_no_improvement_count",
 ]
 
@@ -148,14 +145,10 @@ class Model(BaseModel):
             for param, array in params.items():
                 randomness.set_seed(hash(f"{seed};{param}") % (2**32 - 1))
 
-                if type(array) == NDArray:
-                    value = randomness.random_array_copy(array, _min, _max)
-                elif type(array) == list:
+                if type(array) == list:
                     value = [randomness.random_array_copy(a, _min, _max) for a in array]
                 else:
-                    value = randomness.random_array_copy(np.array([array]), _min, _max)[
-                        0
-                    ]
+                    value = randomness.random_array_copy(array, _min, _max)
 
                 new_params[param] = value
 
@@ -233,6 +226,17 @@ class Model(BaseModel):
             X: array like training data of shape (n_samples, n_features)
             y: array like target values of shapre (n_samples,)
         """
+        # TODO: Find best way to set best_loss_
+        # Adjust best loss for the early stopping
+        if hasattr(self.model, "best_loss_"):
+            self.model.best_loss_ *= 2
+
+        # Reset early stopping and max_training per round
+        reset_attr = ["_no_improvement_count", "n_iter_"]
+        for attr in reset_attr:
+            if hasattr(self.model, attr):
+                setattr(self.model, attr, 0)
+
         self.model.fit(X, y)
 
     def predict(self, X: Any) -> Any:
