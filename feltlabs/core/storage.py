@@ -1,8 +1,6 @@
 """Module for storing and managing data files."""
-import json
-from typing import Any, Optional
-
 from feltlabs.core.cryptography import encrypt_nacl
+from feltlabs.core.json_handler import json_load
 from feltlabs.core.models import analytics_model, sklearn_model
 from feltlabs.typing import BaseModel, FileType
 
@@ -16,11 +14,7 @@ def load_model(file: FileType) -> BaseModel:
     Returns:
         scikit-learn model
     """
-    if type(file) is bytes:
-        data = json.loads(file)
-    else:
-        with open(file, "r") as f:
-            data = json.load(f)
+    data = json_load(file)
 
     if data["model_type"] == "sklearn":
         return sklearn_model.Model(data)

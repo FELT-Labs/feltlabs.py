@@ -11,7 +11,7 @@ def set_seed(seed: int) -> None:
     random.seed(seed)
 
 
-def random_array_copy(array: NDArray, min: int, max: int) -> NDArray:
+def random_array_copy(array: NDArray, min: float, max: float) -> NDArray:
     """Create random array with same shape and data type as original array.
 
     Args:
@@ -22,5 +22,4 @@ def random_array_copy(array: NDArray, min: int, max: int) -> NDArray:
     Returns:
         New random array of same shape and type as original array
     """
-    random_array = (max - min) * np.random.random(array.shape) + min
-    return random_array.astype(array.dtype)
+    return (max - min) * np.random.random(array.shape) + min

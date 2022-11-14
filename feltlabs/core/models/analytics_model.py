@@ -1,6 +1,4 @@
 """Module for importing/exporting analytics models to json."""
-import json
-from ast import Call
 from dataclasses import dataclass
 from typing import Any, Callable, Optional
 
@@ -8,6 +6,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from feltlabs.core import randomness
+from feltlabs.core.json_handler import json_dump
 from feltlabs.typing import BaseModel, PathType
 
 
@@ -95,13 +94,15 @@ class Model(BaseModel):
 
         self.model_name = data["model_name"]
         self.metric = SUPPORTED_MODELS[data["model_name"]]
+        self.is_dirty = data.get("is_dirty", False)
 
-        params = {p: np.array(v) for p, v in data.get("model_params", {}).items()}
+        params = data.get("model_params", {})
         self._set_params(params)
 
         self.sample_size = data.get("sample_size", self.sample_size)
-        # Substract random models (generated from seeds) from loaded model
-        self.remove_noise_models(data.get("seeds", []))
+        if self.is_dirty:
+            # Substract random models (generated from seeds) from loaded model
+            self.remove_noise_models(data.get("seeds", []))
 
     def export_model(self, filename: Optional[PathType] = None) -> bytes:
         """Export sklean model to JSON file or return it as bytes.
@@ -115,15 +116,17 @@ class Model(BaseModel):
         data = {
             "model_type": self.model_type,
             "model_name": self.model_name,
-            "model_params": self._get_params(to_list=True),
+            "is_dirty": self.is_dirty,
+            "model_params": self._get_params(),
             "sample_size": self.sample_size,
         }
 
+        data_bytes = json_dump(data)
         if filename:
-            with open(filename, "w") as f:
-                json.dump(data, f)
+            with open(filename, "wb") as f:
+                f.write(data_bytes)
 
-        return bytes(json.dumps(data), "utf-8")
+        return data_bytes
 
     def get_random_models(
         self, seeds: list[int], _min: int = -100, _max: int = 100
@@ -162,7 +165,7 @@ class Model(BaseModel):
         Args:
             seeds: list of seeds used for generating random models
         """
-        if len(seeds) == 0:
+        if len(seeds) == 0 or not self.is_dirty:
             return
 
         noise_models = self.get_random_models(seeds)
@@ -173,18 +176,14 @@ class Model(BaseModel):
         self._agg_models_op(self.ops["sum_op"], [n_model])
         # Update sample size, because now we have clean aggregated model
         self.sample_size = [sum(self.sample_size)]
+        self.is_dirty = False
 
-    def _get_params(self, to_list: bool = False) -> dict[str, NDArray]:
+    def _get_params(self) -> dict[str, NDArray]:
         """Get dictionary of model parameters.
-
-        Args:
-            to_list: flag to convert numpy arrays to lists (used for export)
 
         Returns:
             dictionary of parameters as name to numpy array
         """
-        if to_list:
-            return {k: v.tolist() for k, v in self.model.items()}
         return self.model
 
     def _set_params(self, params: dict[str, NDArray]) -> None:
