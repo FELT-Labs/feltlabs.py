@@ -13,7 +13,6 @@ from feltlabs.typing import FileType
 def _numpy_to_str(array: NDArray) -> str:
     """Convert numpy array to compressed str."""
     bytes_io = BytesIO()
-    # allow_pickle must be False to prevent code execution
     np.savez_compressed(bytes_io, arr=array)
     enc = base64.b85encode(bytes_io.getvalue())
     return enc.decode()
@@ -41,16 +40,9 @@ class NumpyEncoder(json.JSONEncoder):
         elif isinstance(obj, np.floating):
             return float(obj)
         elif isinstance(obj, np.ndarray):
-            if self.compress:
-                return {
-                    "__numpy__": True,
-                    "array": _numpy_to_str(obj),
-                    "dtype": str(obj.dtype),
-                    "compress": self.compress,
-                }
             return {
                 "__numpy__": True,
-                "array": obj.tolist(),
+                "array": _numpy_to_str(obj) if self.compress else obj.tolist(),
                 "dtype": str(obj.dtype),
                 "compress": self.compress,
             }
@@ -68,7 +60,7 @@ class NumpyEncoder(json.JSONEncoder):
             new dictionary with decoded numpy arrays
         """
         if "__numpy__" in dct:
-            if dct["compress"]:
+            if dct.get("compress", False):
                 return _str_to_numpy(dct["array"])
             return np.array(dct["array"], dtype=dct["dtype"])
         return dct
