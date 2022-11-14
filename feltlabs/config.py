@@ -107,7 +107,7 @@ def parse_training_args(args_str: Optional[list[str]] = None) -> TrainingConfig:
         "--data_type",
         type=str,
         default="test",
-        choices=["test", "csv"],
+        choices=["test", "csv", "pickle"],
         help="Select type of data. For csv last column is used as Y.",
     )
     parser.add_argument(

@@ -101,7 +101,7 @@ requirements = parse_requirements(PATH / "requirements.txt")
 
 setup(
     name="feltlabs",
-    version="0.3.1",
+    version="0.3.2",
     packages=find_packages(),
     maintainer="FELT Labs",
     maintainer_email="info@bretahajek.com",
