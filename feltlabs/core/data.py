@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 import requests
+from numpy.typing import NDArray
 
 from feltlabs.config import AggregationConfig, TrainingConfig
 from feltlabs.core.cryptography import decrypt_nacl
@@ -22,7 +23,7 @@ def _has_csv_header(file: Path) -> bool:
 
 
 # TODO: Add model type
-def load_data(config: TrainingConfig) -> tuple[np.ndarray, np.ndarray]:
+def load_data(config: TrainingConfig) -> tuple[NDArray, NDArray]:
     """Load data and return them in (X, y) format."""
     if config.data_type == "test":
         # Demo data for testing
