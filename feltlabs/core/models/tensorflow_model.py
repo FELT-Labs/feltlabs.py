@@ -1,87 +1,27 @@
-"""Module for handling analytics models."""
-from dataclasses import dataclass
-from typing import Any, Callable, Optional
+"""Module for importing/exporting tensorflow models to json."""
+from typing import Any, Optional, Union, cast
 
 import numpy as np
+import tensorflow as tf
 from numpy.typing import NDArray
 
 from feltlabs.core import randomness
-from feltlabs.core.json_handler import json_dump
+from feltlabs.core.json_handler import json_dump, json_load
 from feltlabs.typing import BaseModel, PathType
 
+# TODO: Handle different array types
 
-@dataclass
-class Metric:
-    """Class for defining different analytics which can be calculated.
-
-    Attributes:
-        scale_rand: set true if random values are scaled by sample size
-        fit_fn: function for calculating metric on original data
-        agg_fun: aggregation function for combining results from different models
-        remove_fn: function used for calculate negative of aggregated noise model
-        output_fn: function used to calculate final value
-    """
-
-    scale_rand: bool
-    fit_fn: Callable
-    agg_fn: Callable
-    remove_fn: Callable
-    output_fn: Callable = lambda x, _: x
-
-
+# So far include only models from tf.keras.applications
 SUPPORTED_MODELS = {
-    "Sum": Metric(
-        scale_rand=True,
-        fit_fn=lambda x: np.sum(x, axis=0),
-        agg_fn=lambda vals, _: np.sum(vals, axis=0),
-        remove_fn=lambda rands, _: -np.sum(rands, axis=0),
-    ),
-    "Mean": Metric(
-        scale_rand=False,
-        fit_fn=lambda x: np.mean(x, axis=0),
-        agg_fn=lambda vals, weights: (weights.T @ vals) / np.sum(weights, axis=0),
-        remove_fn=lambda rands, weights: -(weights.T @ rands) / np.sum(weights, axis=0),
-    ),
-    "Variance": Metric(
-        # Calculating variance using sums should be numerically more stable
-        scale_rand=False,
-        fit_fn=lambda x: np.array(
-            [
-                np.sum(np.power(x, 2), axis=0),
-                np.sum(x, axis=0),
-            ]
-        ),
-        agg_fn=lambda vals, _: np.sum(vals, axis=0),
-        remove_fn=lambda rands, _: -np.sum(rands, axis=0),
-        output_fn=lambda vals, size: abs(
-            (vals[0] - vals[1] ** 2 / sum(size)) / sum(size)
-        ),
-    ),
-    "Std": Metric(
-        # Calculating variance using sums should be numerically more stable
-        scale_rand=False,
-        fit_fn=lambda x: np.array(
-            [
-                np.sum(np.power(x, 2), axis=0),
-                np.sum(x, axis=0),
-            ]
-        ),
-        agg_fn=lambda vals, _: np.sum(vals, axis=0),
-        remove_fn=lambda rands, _: -np.sum(rands, axis=0),
-        output_fn=lambda vals, size: np.sqrt(
-            np.abs((vals[0] - vals[1] ** 2 / sum(size)) / sum(size))
-        ),
-    ),
+    "MobileNetV2": tf.keras.applications.mobilenet_v2.MobileNetV2,
+    "EfficientNetB0": tf.keras.applications.efficientnet.EfficientNetB0,
 }
 
 
 class Model(BaseModel):
-    """Model class for scikit-learn models implementing BaseModel."""
+    """Model class for tensorflow models implementing BaseModel."""
 
-    model_type: str = "analytics"
-    model: dict[str, NDArray] = {
-        "value": np.array([0]),
-    }
+    model_type: str = "tensorflow"
 
     def __init__(self, data: dict):
         """Initialize model calss from data dictionary.
@@ -93,19 +33,27 @@ class Model(BaseModel):
             raise Exception("Unsupported model type")
 
         self.model_name = data["model_name"]
-        self.metric = SUPPORTED_MODELS[data["model_name"]]
         self.is_dirty = data.get("is_dirty", False)
+
+        model_class = SUPPORTED_MODELS[self.model_name]
+        self.init_params = data.get("init_params", {})
+        self.model = model_class(**self.init_params)
 
         params = data.get("model_params", {})
         self._set_params(params)
 
         self.sample_size = data.get("sample_size", self.sample_size)
+
         if self.is_dirty:
             # Substract random models (generated from seeds) from loaded model
             self.remove_noise_models(data.get("seeds", []))
+        # Compile model
+        self.model.compile(
+            "adam", "sparse_categorical_crossentropy", metrics=["accuracy"]
+        )
 
     def export_model(self, filename: Optional[PathType] = None) -> bytes:
-        """Export sklean model to JSON file or return it as bytes.
+        """Export model to JSON file or return it as bytes.
 
         Args:
             filename: path to exported file
@@ -117,7 +65,10 @@ class Model(BaseModel):
             "model_type": self.model_type,
             "model_name": self.model_name,
             "is_dirty": self.is_dirty,
-            "model_params": self._get_params(),
+            "init_params": self.init_params,
+            "model_params": {
+                **self._get_params(),
+            },
             "sample_size": self.sample_size,
         }
 
@@ -146,18 +97,32 @@ class Model(BaseModel):
         ), f"Can't generate random models. Num seeds ({len(seeds)}) and sizes ({len(self.sample_size)}) missmatch."
 
         models = []
+        # TODO: Right now we are not using "size" for the sklearn models
         for seed, size in zip(seeds, self.sample_size):
-            randomness.set_seed(seed)
-
             params = self._get_params()
             new_params = {}
             for param, array in params.items():
-                new_params[param] = randomness.random_array_copy(array, _min, _max)
-                if self.metric.scale_rand:
-                    new_params[param] *= max(1, size)
+                randomness.set_seed(hash(f"{seed};{param}") % (2**32 - 1))
+
+                if type(array) == list:
+                    value = [randomness.random_array_copy(a, _min, _max) for a in array]
+                else:
+                    value = randomness.random_array_copy(array, _min, _max)
+
+                new_params[param] = value
 
             models.append(self.new_model(new_params))
         return models
+
+    def new_model(self, params: dict[str, NDArray] = {}) -> "BaseModel":
+        """Create copy of model and set new parameters.
+
+        Args:
+            params: values to set to the new model
+        """
+        new_model = Model(json_load(self.export_model()))
+        new_model._set_params(params)
+        return new_model
 
     def remove_noise_models(self, seeds: list[int]) -> None:
         """Remove generate and remove random models from current model based on seeds.
@@ -170,10 +135,14 @@ class Model(BaseModel):
 
         noise_models = self.get_random_models(seeds)
 
+        op = lambda x, _: -1 * np.mean(x, axis=0)
+
         n_model, *other_models = noise_models
-        n_model._agg_models_op(self.metric.remove_fn, other_models)
+        n_model._agg_models_op(op, other_models)
 
         self._agg_models_op(self.ops["sum_op"], [n_model])
+        # Cast parameters to required types
+        self._set_params(self._get_params())
         # Update sample size, because now we have clean aggregated model
         self.sample_size = [sum(self.sample_size)]
         self.is_dirty = False
@@ -184,15 +153,21 @@ class Model(BaseModel):
         Returns:
             dictionary of parameters as name to numpy array
         """
-        return self.model
+        weights = cast(list[NDArray], self.model.get_weights())
+        return dict(map(lambda x: (str(x[0]), x[1]), enumerate(weights)))
 
     def _set_params(self, params: dict[str, NDArray]) -> None:
         """Set values of model parameters.
 
         Args:
             params: dictionary mapping from name of param to numpy array
+            type_cast: set true if types should be cast to expected type
         """
-        self.model = {**self.model, **params}
+        if not params:
+            return
+        sorted_keys = map(str, sorted(map(int, params.keys())))
+        weights = [params[i] for i in sorted_keys]
+        self.model.set_weights(weights)
 
     def _aggregate(self, models: list[BaseModel]) -> None:
         """Aggregation function on self + list of models.
@@ -202,7 +177,7 @@ class Model(BaseModel):
         """
         if len(models) == 0:
             return
-        self._agg_models_op(self.metric.agg_fn, models)
+        self._agg_models_op(self.ops["mean_op"], models)
 
     def _fit(self, X: Any, y: Any) -> None:
         """Fit model on given data.
@@ -211,7 +186,7 @@ class Model(BaseModel):
             X: array like training data of shape (n_samples, n_features)
             y: array like target values of shapre (n_samples,)
         """
-        self.model["value"] = self.metric.fit_fn(y)
+        self.model.fit(X, y, epochs=1, batch_size=32)
 
     def predict(self, X: Any) -> Any:
         """Use mode for prediction on given data.
@@ -219,7 +194,4 @@ class Model(BaseModel):
         Args:
             X: array like data used for prediciton of shape (n_samples, n_features)
         """
-        print(
-            f"{self.model_name} value is {self.metric.output_fn(self.model['value'], self.sample_size)}"
-        )
-        return self.metric.output_fn(self.model["value"], self.sample_size)
+        return self.model.predict(X)

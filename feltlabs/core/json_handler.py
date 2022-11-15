@@ -2,7 +2,7 @@
 import base64
 import json
 from io import BytesIO
-from typing import Any
+from typing import Any, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 from feltlabs.typing import FileType
 
 
-def _numpy_to_str(array: NDArray) -> str:
+def _numpy_to_str(array: Union[NDArray, np.integer, np.floating]) -> str:
     """Convert numpy array to compressed str."""
     bytes_io = BytesIO()
     np.savez_compressed(bytes_io, arr=array)
@@ -35,11 +35,11 @@ class NumpyEncoder(json.JSONEncoder):
 
     def default(self, obj: Any) -> Any:
         """Special method for encoding numpy arrays into JSON."""
-        if isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
-        elif isinstance(obj, np.ndarray):
+        if (
+            isinstance(obj, np.integer)
+            or isinstance(obj, np.floating)
+            or isinstance(obj, np.ndarray)
+        ):
             return {
                 "__numpy__": True,
                 "array": _numpy_to_str(obj) if self.compress else obj.tolist(),

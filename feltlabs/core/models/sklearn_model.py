@@ -1,4 +1,4 @@
-"""Module for importing/exporting sklearn models to json."""
+"""Module for handling sklearn models."""
 from typing import Any, Optional
 
 import numpy as np
