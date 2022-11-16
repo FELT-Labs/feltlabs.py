@@ -1,5 +1,6 @@
 """Module for generating random numbers used by models."""
 import random
+from typing import Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -11,7 +12,9 @@ def set_seed(seed: int) -> None:
     random.seed(seed)
 
 
-def random_array_copy(array: NDArray, min: float, max: float) -> NDArray:
+def random_array_copy(
+    array: Union[NDArray, int, float], min: float, max: float
+) -> Union[NDArray, float]:
     """Create random array with same shape and data type as original array.
 
     Args:
@@ -22,4 +25,6 @@ def random_array_copy(array: NDArray, min: float, max: float) -> NDArray:
     Returns:
         New random array of same shape and type as original array
     """
-    return (max - min) * np.random.random(array.shape) + min
+    if isinstance(array, np.ndarray):
+        return (max - min) * np.random.random(array.shape) + min
+    return (max - min) * np.random.random() + min

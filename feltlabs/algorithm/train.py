@@ -16,7 +16,7 @@ def main(args_str: Optional[list[str]] = None, output_name: str = "model"):
     """
     args = parse_training_args(args_str)
     # Load model
-    model = load_model(args.custom_data_path)
+    model = load_model(args.custom_data_path, args.experimental)
     # Load data and train model
     X, y = load_data(args)
     model.fit(X, y)

@@ -1,16 +1,11 @@
-"""Module for importing/exporting sklearn models to json."""
-from typing import Any, Optional
+"""Module for handling sklearn models."""
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
 from sklearn import linear_model, neighbors, neural_network, preprocessing
 
-from feltlabs.core import randomness
-from feltlabs.core.json_handler import json_dump
-from feltlabs.typing import BaseModel, PathType
-
-# TODO: we need to set warm_start=True for multiple rounds!!!
-#     - maybe need to reset _no_improvement_count and max_iter (n_iter_)
+from feltlabs.core.models.base_model import BaseModel
 
 # TODO: SVM attributes  ["dual_coef_", "support_", "support_vectors_", "_n_support"
 # Attributes and data type casting for them (done only after removing randomness)
@@ -26,11 +21,11 @@ ATTRIBUTE_LIST = {
     "n_outputs_": round,
     # Needed by MLPClassifier
     "t_": round,
+    "loss_curve_": None,
+    "best_loss_": None,
 }
 FIXED_ATTRIBUTE_LIST = [
     "out_activation_",
-    "loss_curve_",
-    "best_loss_",
     "_no_improvement_count",
 ]
 
@@ -95,16 +90,13 @@ class Model(BaseModel):
             self.model._label_binarizer = preprocessing.LabelBinarizer()
             self.model._label_binarizer.fit(self.model.classes_)
 
-    def export_model(self, filename: Optional[PathType] = None) -> bytes:
-        """Export sklean model to JSON file or return it as bytes.
-
-        Args:
-            filename: path to exported file
+    def _export_data(self) -> dict:
+        """Get model data as dictionary for storing (and loading) model.
 
         Returns:
-            bytes of JSON file
+            dictionary containing model data which should be stored
         """
-        data = {
+        return {
             "model_type": self.model_type,
             "model_name": self.model_name,
             "is_dirty": self.is_dirty,
@@ -115,52 +107,6 @@ class Model(BaseModel):
             },
             "sample_size": self.sample_size,
         }
-
-        data_bytes = json_dump(data)
-        if filename:
-            with open(filename, "wb") as f:
-                f.write(data_bytes)
-
-        return data_bytes
-
-    def get_random_models(
-        self, seeds: list[int], _min: int = -100, _max: int = 100
-    ) -> list[BaseModel]:
-        """Generate models with random parameters.
-
-        Args:
-            seeds: list of seeds for randomness generation
-            _min: minimum value of random number
-            _max: maximum value of random number
-
-        Returns:
-            Returns copy of model with random variables.
-        """
-        assert len(seeds) == len(
-            self.sample_size
-        ), f"Can't generate random models. Num seeds ({len(seeds)}) and sizes ({len(self.sample_size)}) missmatch."
-
-        models = []
-        # TODO: Right now we are not using "size" for the sklearn models
-        for seed, size in zip(seeds, self.sample_size):
-            params = self._get_params()
-            new_params = {}
-            for param, array in params.items():
-                randomness.set_seed(hash(f"{seed};{param}") % (2**32 - 1))
-
-                if type(array) == NDArray:
-                    value = randomness.random_array_copy(array, _min, _max)
-                elif type(array) == list:
-                    value = [randomness.random_array_copy(a, _min, _max) for a in array]
-                else:
-                    value = randomness.random_array_copy(np.array([array]), _min, _max)[
-                        0
-                    ]
-
-                new_params[param] = value
-
-            models.append(self.new_model(new_params))
-        return models
 
     def remove_noise_models(self, seeds: list[int]) -> None:
         """Remove generate and remove random models from current model based on seeds.
@@ -231,14 +177,25 @@ class Model(BaseModel):
 
         Args:
             X: array like training data of shape (n_samples, n_features)
-            y: array like target values of shapre (n_samples,)
+            y: array like target values of shape (n_samples,)
         """
+        # TODO: Find best way to set best_loss_
+        # Adjust best loss for the early stopping
+        if hasattr(self.model, "best_loss_"):
+            self.model.best_loss_ *= 2
+
+        # Reset early stopping and max_training per round
+        reset_attr = ["_no_improvement_count", "n_iter_"]
+        for attr in reset_attr:
+            if hasattr(self.model, attr):
+                setattr(self.model, attr, 0)
+
         self.model.fit(X, y)
 
     def predict(self, X: Any) -> Any:
         """Use mode for prediction on given data.
 
         Args:
-            X: array like data used for prediciton of shape (n_samples, n_features)
+            X: array like data used for prediction of shape (n_samples, n_features)
         """
         return self.model.predict(X)

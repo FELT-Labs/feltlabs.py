@@ -2,3 +2,4 @@ numpy==1.21.0
 PyNaCl==1.5.0
 requests==2.28.1
 scikit-learn==1.0.1
+tensorflow==2.10.0

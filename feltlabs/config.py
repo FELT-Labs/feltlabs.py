@@ -23,6 +23,7 @@ class TrainingConfig(OceanConfig):
     seed: int
     target_column: int
     solo_training: bool
+    experimental: bool
 
 
 class AggregationConfig(OceanConfig):
@@ -98,11 +99,25 @@ def parse_training_args(args_str: Optional[list[str]] = None) -> TrainingConfig:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser = _ocean_parser(parser)
+    # Fixed algorithm params (set as part of deployed algorithm)
     parser.add_argument(
         "--aggregation_key",
         type=str,
         help="Public key used for encrypting local model for aggregation algorithm.",
     )
+    parser.add_argument(
+        "--solo_training",
+        action="store_true",
+        default=False,
+        help="If true (flag included), it will run training on single dataset without encryption.",
+    )
+    parser.add_argument(
+        "--experimental",
+        action="store_true",
+        default=False,
+        help="If true, allow usage of experimental models (which might be less secure).",
+    )
+    # Changable arguments (can be changed via algorithm custom data)
     parser.add_argument(
         "--data_type",
         type=str,
@@ -115,12 +130,6 @@ def parse_training_args(args_str: Optional[list[str]] = None) -> TrainingConfig:
         type=int,
         default=-1,
         help="Select index of target column.",
-    )
-    parser.add_argument(
-        "--solo_training",
-        action="store_true",
-        default=False,
-        help="If true (flag included), it will run training on single dataset without encryption.",
     )
     parser.add_argument(
         "--seed",
@@ -164,16 +173,11 @@ def parse_aggregation_args(args_str: Optional[list[str]] = None) -> AggregationC
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser = _ocean_parser(parser)
+    # Fixed algorithm params (set as part of deployed algorithm)
     parser.add_argument(
         "--private_key",
         type=str,
         help="Private key specified for aggregation algorithm used for decrypting models.",
-    )
-    parser.add_argument(
-        "--public_key",
-        type=str,
-        help="Public key used for encrypting final model for scientis.",
-        default=None,
     )
     parser.add_argument(
         "--min_models",
@@ -186,6 +190,13 @@ def parse_aggregation_args(args_str: Optional[list[str]] = None) -> AggregationC
         help="If true (flag included), models will be donwloaded from provided URLs",
         action="store_true",
         default=False,
+    )
+    # Changable arguments (can be changed via algorithm custom data)
+    parser.add_argument(
+        "--public_key",
+        type=str,
+        help="Public key used for encrypting final model for scientis.",
+        default=None,
     )
     args = parser.parse_args(args_str)
 

@@ -1,13 +1,12 @@
-"""Module for importing/exporting analytics models to json."""
+"""Module for handling analytics models."""
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 import numpy as np
 from numpy.typing import NDArray
 
 from feltlabs.core import randomness
-from feltlabs.core.json_handler import json_dump
-from feltlabs.typing import BaseModel, PathType
+from feltlabs.core.models.base_model import BaseModel
 
 
 @dataclass
@@ -104,29 +103,19 @@ class Model(BaseModel):
             # Substract random models (generated from seeds) from loaded model
             self.remove_noise_models(data.get("seeds", []))
 
-    def export_model(self, filename: Optional[PathType] = None) -> bytes:
-        """Export sklean model to JSON file or return it as bytes.
-
-        Args:
-            filename: path to exported file
+    def _export_data(self) -> dict:
+        """Get model data as dictionary for storing (and loading) model.
 
         Returns:
-            bytes of JSON file
+            dictionary containing model data which should be stored
         """
-        data = {
+        return {
             "model_type": self.model_type,
             "model_name": self.model_name,
             "is_dirty": self.is_dirty,
             "model_params": self._get_params(),
             "sample_size": self.sample_size,
         }
-
-        data_bytes = json_dump(data)
-        if filename:
-            with open(filename, "wb") as f:
-                f.write(data_bytes)
-
-        return data_bytes
 
     def get_random_models(
         self, seeds: list[int], _min: int = -100, _max: int = 100
