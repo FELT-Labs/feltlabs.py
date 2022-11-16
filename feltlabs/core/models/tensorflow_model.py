@@ -1,13 +1,12 @@
 """Module for importing/exporting tensorflow models to json."""
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 import numpy as np
 import tensorflow as tf
 from numpy.typing import NDArray
 
-from feltlabs.core import randomness
-from feltlabs.core.json_handler import json_dump, json_load
-from feltlabs.typing import BaseModel, PathType
+from feltlabs.core.json_handler import json_load
+from feltlabs.typing import BaseModel
 
 # TODO: Handle different array types
 
@@ -24,7 +23,7 @@ class Model(BaseModel):
     model_type: str = "tensorflow"
 
     def __init__(self, data: dict):
-        """Initialize model calss from data dictionary.
+        """Initialize model class from data dictionary.
 
         Args
             data: model loaded from JSON as dict
@@ -45,23 +44,20 @@ class Model(BaseModel):
         self.sample_size = data.get("sample_size", self.sample_size)
 
         if self.is_dirty:
-            # Substract random models (generated from seeds) from loaded model
+            # Subtract random models (generated from seeds) from loaded model
             self.remove_noise_models(data.get("seeds", []))
         # Compile model
         self.model.compile(
             "adam", "sparse_categorical_crossentropy", metrics=["accuracy"]
         )
 
-    def export_model(self, filename: Optional[PathType] = None) -> bytes:
-        """Export model to JSON file or return it as bytes.
-
-        Args:
-            filename: path to exported file
+    def _export_data(self) -> dict:
+        """Get model data as dictionary for storing (and loading) model.
 
         Returns:
-            bytes of JSON file
+            dictionary containing model data which should be stored
         """
-        data = {
+        return {
             "model_type": self.model_type,
             "model_name": self.model_name,
             "is_dirty": self.is_dirty,
@@ -71,48 +67,6 @@ class Model(BaseModel):
             },
             "sample_size": self.sample_size,
         }
-
-        data_bytes = json_dump(data)
-        if filename:
-            with open(filename, "wb") as f:
-                f.write(data_bytes)
-
-        return data_bytes
-
-    def get_random_models(
-        self, seeds: list[int], _min: int = -100, _max: int = 100
-    ) -> list[BaseModel]:
-        """Generate models with random parameters.
-
-        Args:
-            seeds: list of seeds for randomness generation
-            _min: minimum value of random number
-            _max: maximum value of random number
-
-        Returns:
-            Returns copy of model with random variables.
-        """
-        assert len(seeds) == len(
-            self.sample_size
-        ), f"Can't generate random models. Num seeds ({len(seeds)}) and sizes ({len(self.sample_size)}) missmatch."
-
-        models = []
-        # TODO: Right now we are not using "size" for the sklearn models
-        for seed, size in zip(seeds, self.sample_size):
-            params = self._get_params()
-            new_params = {}
-            for param, array in params.items():
-                randomness.set_seed(hash(f"{seed};{param}") % (2**32 - 1))
-
-                if type(array) == list:
-                    value = [randomness.random_array_copy(a, _min, _max) for a in array]
-                else:
-                    value = randomness.random_array_copy(array, _min, _max)
-
-                new_params[param] = value
-
-            models.append(self.new_model(new_params))
-        return models
 
     def new_model(self, params: dict[str, NDArray] = {}) -> "BaseModel":
         """Create copy of model and set new parameters.

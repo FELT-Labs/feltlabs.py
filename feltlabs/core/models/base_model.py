@@ -6,12 +6,14 @@ from typing import Any, Callable, Optional
 import numpy as np
 from numpy.typing import NDArray
 
+from feltlabs.core import randomness
+from feltlabs.core.json_handler import json_dump
 from feltlabs.typing import PathType
 
 
 class BaseModel(ABC):
     """Base model class for federated learning.
-    Each model must subclass BaseModel so that neccessary functions for federated
+    Each model must subclass BaseModel so that necessary functions for federated
     learning are implemented.
     """
 
@@ -27,7 +29,7 @@ class BaseModel(ABC):
 
     @abstractmethod
     def __init__(self, data: dict):
-        """Initialize model calss from data dictionary.
+        """Initialize model class from data dictionary.
 
         Args
             data: model loaded from JSON as dict
@@ -54,6 +56,78 @@ class BaseModel(ABC):
         self._agg_models_op(self.ops["sum_op"], rand_model)
         self.is_dirty = True
 
+    def get_random_models(
+        self, seeds: list[int], _min: int = -100, _max: int = 100
+    ) -> list["BaseModel"]:
+        """Generate models with random parameters.
+
+        Args:
+            seeds: list of seeds for randomness generation
+            _min: minimum value of random number
+            _max: maximum value of random number
+
+        Returns:
+            Returns copy of model with random variables.
+        """
+        assert len(seeds) == len(
+            self.sample_size
+        ), f"Can't generate random models. Num seeds ({len(seeds)}) and sizes ({len(self.sample_size)}) missmatch."
+
+        models = []
+        # TODO: Right now we are not using "size" for the sklearn models
+        for seed, size in zip(seeds, self.sample_size):
+            params = self._get_params()
+            new_params = {}
+            for param, array in params.items():
+                randomness.set_seed(hash(f"{seed};{param}") % (2**32 - 1))
+
+                if type(array) == list:
+                    value = [randomness.random_array_copy(a, _min, _max) for a in array]
+                else:
+                    value = randomness.random_array_copy(array, _min, _max)
+
+                new_params[param] = value
+
+            models.append(self.new_model(new_params))
+        return models
+
+    # TODO: Specify typing for fit and predict
+    def fit(self, X: Any, y: Any) -> None:
+        """Wrapper around model fitting.
+
+        Args:
+            X: array like training data of shape (n_samples, n_features)
+            y: array like target values of shape (n_samples,)
+        """
+        self.sample_size = [len(y)]
+        self._fit(X, y)
+
+    def aggregate(self, models: list["BaseModel"]) -> None:
+        """Wrapper around aggregation function
+
+        Args:
+            models: list of models
+        """
+        self.sample_size.extend([m.sample_size[0] for m in models])
+        self._aggregate(models)
+
+    def export_model(self, filename: Optional[PathType] = None) -> bytes:
+        """Export model to bytes and optionally store it as JSON file.
+
+        Args:
+            filename: path to exported file
+
+        Returns:
+            bytes of JSON file
+        """
+        data = self._export_data()
+        data_bytes = json_dump(data)
+        if filename:
+            with open(filename, "wb") as f:
+                f.write(data_bytes)
+
+        return data_bytes
+
     def _agg_models_op(self, op: Callable, models: list["BaseModel"]) -> None:
         """Perform aggregation operation on list of models.
 
@@ -79,26 +153,6 @@ class BaseModel(ABC):
 
         self._set_params(new_params)
 
-    # TODO: Specify typing for fit and predict
-    def fit(self, X: Any, y: Any) -> None:
-        """Wrapper around model fitting.
-
-        Args:
-            X: array like training data of shape (n_samples, n_features)
-            y: array like target values of shapre (n_samples,)
-        """
-        self.sample_size = [len(y)]
-        self._fit(X, y)
-
-    def aggregate(self, models: list["BaseModel"]) -> None:
-        """Wrapper around aggregation function
-
-        Args:
-            models: list of models
-        """
-        self.sample_size.extend([m.sample_size[0] for m in models])
-        self._aggregate(models)
-
     @abstractmethod
     def _aggregate(self, models: list["BaseModel"]) -> None:
         """Aggregation function on self + list of models, specific for given model.
@@ -113,33 +167,15 @@ class BaseModel(ABC):
 
         Args:
             X: array like training data of shape (n_samples, n_features)
-            y: array like target values of shapre (n_samples,)
+            y: array like target values of shape (n_samples,)
         """
 
     @abstractmethod
-    def export_model(self, filename: Optional[PathType] = None) -> bytes:
-        """Export model to bytes and optionaly store it as JSON file.
-
-        Args:
-            filename: path to exported file
+    def _export_data(self) -> dict:
+        """Get model data as dictionary for storing (and loading) model.
 
         Returns:
-            bytes of JSON file
-        """
-
-    @abstractmethod
-    def get_random_models(
-        self, seeds: list[int], _min: int = -100, _max: int = 100
-    ) -> list["BaseModel"]:
-        """Generate models with random parameters.
-
-        Args:
-            seeds: list of seeds for randomness generation
-            _min: minimum value of random number
-            _max: maximum value of random number
-
-        Returns:
-            Returns copy of model with random variables.
+            dictionary containing model data which should be stored
         """
 
     @abstractmethod
@@ -171,5 +207,5 @@ class BaseModel(ABC):
         """Use mode for prediction on given data.
 
         Args:
-            X: array like data used for prediciton of shape (n_samples, n_features)
+            X: array like data used for prediction of shape (n_samples, n_features)
         """
