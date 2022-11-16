@@ -5,7 +5,7 @@ import numpy as np
 from numpy.typing import NDArray
 from sklearn import linear_model, neighbors, neural_network, preprocessing
 
-from feltlabs.typing import BaseModel
+from feltlabs.core.models.base_model import BaseModel
 
 # TODO: SVM attributes  ["dual_coef_", "support_", "support_vectors_", "_n_support"
 # Attributes and data type casting for them (done only after removing randomness)

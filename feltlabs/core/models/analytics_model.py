@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from feltlabs.core import randomness
-from feltlabs.typing import BaseModel
+from feltlabs.core.models.base_model import BaseModel
 
 
 @dataclass

@@ -6,7 +6,7 @@ import tensorflow as tf
 from numpy.typing import NDArray
 
 from feltlabs.core.json_handler import json_load
-from feltlabs.typing import BaseModel
+from feltlabs.core.models.base_model import BaseModel
 
 # TODO: Handle different array types
 

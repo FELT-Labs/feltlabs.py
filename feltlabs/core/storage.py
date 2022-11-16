@@ -2,7 +2,8 @@
 from feltlabs.core.cryptography import encrypt_nacl
 from feltlabs.core.json_handler import json_load
 from feltlabs.core.models import analytics_model, sklearn_model, tensorflow_model
-from feltlabs.typing import BaseModel, FileType
+from feltlabs.core.models.base_model import BaseModel
+from feltlabs.typing import FileType
 
 
 def _is_experimental(experimental: bool) -> None:
