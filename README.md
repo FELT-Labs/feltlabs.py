@@ -1,4 +1,6 @@
 # feltlabs.py
+[![Docker Pulls](https://badgen.net/docker/pulls/feltlabs/feltlabs-py)](https://hub.docker.com/r/feltlabs/feltlabs-py)
+[![PyPI Version](https://badgen.net/pypi/v/feltlabs)](https://pypi.org/project/feltlabs/)  
 Python library for FELT Labs. It is available at [PyPI](https://pypi.org/project/feltlabs/):
 ```bash
 pip install feltlabs
