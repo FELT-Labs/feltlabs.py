@@ -136,11 +136,11 @@ class Model(BaseModel):
 
         models = []
         for seed, size in zip(seeds, self.sample_size):
-            randomness.set_seed(seed)
-
             params = self._get_params()
             new_params = {}
             for param, array in params.items():
+                self._set_seed(seed, param)
+
                 new_params[param] = randomness.random_array_copy(array, _min, _max)
                 if self.metric.scale_rand:
                     new_params[param] *= max(1, size)

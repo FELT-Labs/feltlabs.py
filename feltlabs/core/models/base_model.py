@@ -1,5 +1,6 @@
 """Module providing model class interface."""
 import copy
+import hashlib
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Optional
 
@@ -71,7 +72,7 @@ class BaseModel(ABC):
         """
         assert len(seeds) == len(
             self.sample_size
-        ), f"Can't generate random models. Num seeds ({len(seeds)}) and sizes ({len(self.sample_size)}) missmatch."
+        ), f"Can't generate random models. Num seeds ({len(seeds)}) and sizes ({len(self.sample_size)}) mismatch."
 
         models = []
         # TODO: Right now we are not using "size" for the sklearn models
@@ -79,7 +80,7 @@ class BaseModel(ABC):
             params = self._get_params()
             new_params = {}
             for param, array in params.items():
-                randomness.set_seed(hash(f"{seed};{param}") % (2**32 - 1))
+                self._set_seed(seed, param)
 
                 if type(array) == list:
                     value = [randomness.random_array_copy(a, _min, _max) for a in array]
@@ -127,6 +128,18 @@ class BaseModel(ABC):
                 f.write(data_bytes)
 
         return data_bytes
+
+    def _set_seed(self, seed: int, param: str) -> None:
+        """Set randomness seed of given parameter.
+
+        Args:
+            seed: seed provided for the whole training
+            param: parameter for which we are setting the seed
+        """
+        seed = int(
+            hashlib.sha256(bytes(f"{seed};{param}", "utf-8")).hexdigest(), 16
+        ) % (2**32 - 1)
+        randomness.set_seed(seed)
 
     def _agg_models_op(self, op: Callable, models: list["BaseModel"]) -> None:
         """Perform aggregation operation on list of models.
