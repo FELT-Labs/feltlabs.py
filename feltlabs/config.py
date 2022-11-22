@@ -2,6 +2,7 @@
 import argparse
 import json
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, cast
 
@@ -10,27 +11,30 @@ INPUT_FOLDER = Path("/data/inputs/")
 CUSTOM_DATA = "algoCustomData.json"
 
 
+@dataclass
 class OceanConfig:
-    input_folder: Path
-    output_folder: Path
-    custom_data_path: Path
-    custom_data: str
+    input_folder: Path = INPUT_FOLDER
+    output_folder: Path = OUTPUT_FOLDER
+    custom_data_path: Path = INPUT_FOLDER / CUSTOM_DATA
+    custom_data: str = CUSTOM_DATA
 
 
+@dataclass
 class TrainingConfig(OceanConfig):
-    aggregation_key: bytes
-    data_type: str
-    seed: int
-    target_column: int
-    solo_training: bool
-    experimental: bool
+    aggregation_key: bytes = bytes(0)
+    data_type: str = "test"
+    seed: int = 42
+    target_column: int = -1
+    solo_training: bool = False
+    experimental: bool = False
 
 
+@dataclass
 class AggregationConfig(OceanConfig):
-    private_key: bytes
-    public_key: bytes
-    download_models: bool
-    min_models: int
+    private_key: bytes = bytes(0)
+    public_key: Optional[bytes] = None
+    download_models: bool = False
+    min_models: int = 2
 
 
 def _help_exit(parser, error_msg=None):

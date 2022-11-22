@@ -1,5 +1,6 @@
 """Testing import/export to json."""
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 
@@ -23,7 +24,7 @@ def test_sklearn_linreg_import_export(tmp_path: Path):
     with open(file_path, "rb") as f:
         assert f.read() == model_bytes
 
-    im_model = load_model(file_path)
+    im_model = cast(sklearn_model.Model, load_model(file_path))
 
     assert np.array_equal(im_model.model.coef_, model.model.coef_)
     assert np.array_equal(im_model.predict(X), model.predict(X))
@@ -47,7 +48,7 @@ def test_sklearn_ridge_import_export(tmp_path: Path):
     with open(file_path, "rb") as f:
         assert f.read() == model_bytes
 
-    im_model = load_model(file_path)
+    im_model = cast(sklearn_model.Model, load_model(file_path))
 
     assert np.array_equal(im_model.model.coef_, model.model.coef_)
     assert np.array_equal(im_model.predict(X), model.predict(X))

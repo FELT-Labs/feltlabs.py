@@ -47,7 +47,7 @@ def test_training(tmp_path: Path):
 
     for i in range(2):
         args_str_final = f"{args_str} --seed {i}"
-        enc_model = train.main(args_str_final.split(), f"{i}")
+        enc_model = train.main(args_str_final.split(), output_name=f"{i}")
 
         enc_models.append(enc_model)
         seeds.append(i)
@@ -57,7 +57,7 @@ def test_training(tmp_path: Path):
     args_str += f" --input_folder {output_folder.parent}"
     args_str += f" --private_key {bytes(aggregation_key).hex()}"
 
-    enc_final_model = aggregate.main(args_str.split(), "final_model")
+    enc_final_model = aggregate.main(args_str.split(), output_name="final_model")
 
     ### Test final results ###
     final_model = load_model(enc_final_model)
@@ -75,4 +75,4 @@ def test_training(tmp_path: Path):
 
     with pytest.raises(Exception):
         # Should fail because at least 3 models are required
-        enc_final_model = aggregate.main(args_str.split(), "final_model")
+        enc_final_model = aggregate.main(args_str.split(), output_name="final_model")

@@ -37,7 +37,7 @@ def test_training(tmp_path: Path):
 
     # Define extra args with different output folder
     model_name = "model.json"
-    model = train.main(args_str.split(), model_name)
+    model = train.main(args_str.split(), output_name=model_name)
 
     model = load_model(output_folder / model_name)
 

@@ -1,36 +1,42 @@
 """Module for aggregating outputs of local training."""
 from typing import Optional
 
-from feltlabs.config import parse_aggregation_args
+from feltlabs.config import AggregationConfig, parse_aggregation_args
 from feltlabs.core.data import load_models
 from feltlabs.core.ocean import save_output
 from feltlabs.core.storage import encrypt_model
 
 
-def main(args_str: Optional[list[str]] = None, output_name: str = "model"):
+def main(
+    args_str: Optional[list[str]] = None,
+    config: Optional[AggregationConfig] = None,
+    output_name: str = "model",
+):
     """Main function for exectuting from command line.
 
     Args:
         args_str: list with string arguments or None if using command line
+        config: config object is used instead of arg parser if specified
         output_name: name of output model
     """
-    args = parse_aggregation_args(args_str)
+    if config is None:
+        config = parse_aggregation_args(args_str)
     # Load models
-    models = load_models(args)
-    if len(models) < args.min_models:
+    models = load_models(config)
+    if len(models) < config.min_models:
         raise Exception(
-            f"Not enough models for aggregation, loaded {len(models)} models (required {args.min_models})."
+            f"Not enough models for aggregation, loaded {len(models)} models (required {config.min_models})."
         )
     # Aggregate
     model, *other_models = models
     model.aggregate(other_models)
     # Encrypt final model using scientist public key if provided
-    if args.public_key:
-        model = encrypt_model(model, args.public_key)
+    if config.public_key:
+        model = encrypt_model(model, config.public_key)
     else:
         model = model.export_model()
     # Save model (bytes) into output
-    save_output(output_name, model, args)
+    save_output(output_name, model, config)
     print("Aggregation finieshed.")
     return model
 
