@@ -1,5 +1,8 @@
 """Module for importing/exporting tensorflow models to json."""
+import os
 from typing import Any, cast
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 import numpy as np
 import tensorflow as tf
