@@ -71,7 +71,7 @@ def json_dump(obj: Any) -> bytes:
     return bytes(json.dumps(obj, cls=NumpyEncoder), "utf-8")
 
 
-def json_load(file: FileType) -> Any:
+def json_load(file: Union[FileType, dict]) -> Any:
     """Load json file using custom loaded.
 
     Args:
@@ -80,7 +80,10 @@ def json_load(file: FileType) -> Any:
     Returns:
         loaded json object (dictionary)
     """
-    if type(file) is bytes:
+    if isinstance(file, dict):
+        return file
+
+    if isinstance(file, bytes):
         return json.loads(file, object_hook=NumpyEncoder.decoder_hook)
 
     with open(file, "r") as f:

@@ -15,6 +15,7 @@ from feltlabs.core.models.base_model import BaseModel
 
 # So far include only models from tf.keras.applications
 SUPPORTED_MODELS = {
+    # TODO: Seems to be some issue with mobile net maybe batch norm layer?
     "MobileNetV2": tf.keras.applications.mobilenet_v2.MobileNetV2,
     "EfficientNetB0": tf.keras.applications.efficientnet.EfficientNetB0,
 }
