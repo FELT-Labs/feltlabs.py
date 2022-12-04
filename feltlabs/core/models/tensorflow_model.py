@@ -148,7 +148,7 @@ class Model(BaseModel):
 
         Args:
             X: array like training data of shape (n_samples, n_features)
-            y: array like target values of shapre (n_samples,)
+            y: array like target values of shape (n_samples,)
         """
         self.model.fit(X, y, **self.fit_args)
 
@@ -156,6 +156,6 @@ class Model(BaseModel):
         """Use mode for prediction on given data.
 
         Args:
-            X: array like data used for prediciton of shape (n_samples, n_features)
+            X: array like data used for prediction of shape (n_samples, n_features)
         """
         return self.model.predict(X)
