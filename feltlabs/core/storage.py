@@ -1,4 +1,6 @@
 """Module for storing and managing data files."""
+from typing import Union
+
 from feltlabs.core.cryptography import encrypt_nacl
 from feltlabs.core.json_handler import json_load
 from feltlabs.core.models import analytics_model, sklearn_model, tensorflow_model
@@ -12,7 +14,7 @@ def _is_experimental(experimental: bool) -> None:
         raise Exception("Loading experimental model while experimental is set False.")
 
 
-def load_model(file: FileType, experimental: bool = True) -> BaseModel:
+def load_model(file: Union[FileType, dict], experimental: bool = True) -> BaseModel:
     """Load model from json file (intended for use in 3rd party programs).
 
     Args:

@@ -157,11 +157,18 @@ class BaseModel(ABC):
                 print(f"WARNING: Parameter '{param}' is not present in all models.")
                 continue
 
+            is_list = isinstance(models_params[0][param], list)
+
             values = [params[param] for params in models_params]
+            # Convert to array of objects to prevent warning (elements have different shape)
+            values = np.array(values, dtype=object) if is_list else values
             val = op(values, models_weights)
-            if isinstance(models_params[0][param], list):
+
+            if is_list:
+                val = op(values, models_weights)
                 new_params[param] = list(val)
             else:
+                val = op(values, models_weights)
                 new_params[param] = val
 
         self._set_params(new_params)

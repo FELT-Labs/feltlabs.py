@@ -1,5 +1,8 @@
 """Module for importing/exporting tensorflow models to json."""
+import os
 from typing import Any, cast
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 import numpy as np
 import tensorflow as tf
@@ -7,18 +10,23 @@ from numpy.typing import NDArray
 
 from feltlabs.core.json_handler import json_load
 from feltlabs.core.models.base_model import BaseModel
+from feltlabs.core.models.tensorflow.cnn_network import get_cnn_network
 
 # TODO: Handle different array types
 
 # So far include only models from tf.keras.applications
 SUPPORTED_MODELS = {
+    # TODO: Seems to be some issue with mobile net maybe batch norm layer?
     "MobileNetV2": tf.keras.applications.mobilenet_v2.MobileNetV2,
     "EfficientNetB0": tf.keras.applications.efficientnet.EfficientNetB0,
+    "CustomCNN": get_cnn_network,
 }
 
 
 class Model(BaseModel):
     """Model class for tensorflow models implementing BaseModel."""
+
+    # TODO: Document model parameters
 
     model_type: str = "tensorflow"
 
@@ -41,6 +49,7 @@ class Model(BaseModel):
         params = data.get("model_params", {})
         self._set_params(params)
 
+        self.fit_args = data.get("fit_args", {})
         self.sample_size = data.get("sample_size", self.sample_size)
 
         if self.is_dirty:
@@ -62,6 +71,7 @@ class Model(BaseModel):
             "model_name": self.model_name,
             "is_dirty": self.is_dirty,
             "init_params": self.init_params,
+            "fit_args": self.fit_args,
             "model_params": {
                 **self._get_params(),
             },
@@ -140,7 +150,7 @@ class Model(BaseModel):
             X: array like training data of shape (n_samples, n_features)
             y: array like target values of shapre (n_samples,)
         """
-        self.model.fit(X, y, epochs=1, batch_size=32)
+        self.model.fit(X, y, **self.fit_args)
 
     def predict(self, X: Any) -> Any:
         """Use mode for prediction on given data.

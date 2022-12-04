@@ -37,7 +37,7 @@ def main(
         model = model.export_model()
     # Save model (bytes) into output
     save_output(output_name, model, config)
-    print("Aggregation finieshed.")
+    print("Aggregation finished.")
     return model
 
 
