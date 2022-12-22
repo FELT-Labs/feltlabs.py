@@ -4,7 +4,7 @@ import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, cast
+from typing import Dict, List, Optional, cast
 
 OUTPUT_FOLDER = Path("/data/outputs")
 INPUT_FOLDER = Path("/data/inputs/")
@@ -45,7 +45,7 @@ def _help_exit(parser, error_msg=None):
     sys.exit(2)
 
 
-def _add_ocean_config(config: OceanConfig) -> dict[str, str]:
+def _add_ocean_config(config: OceanConfig) -> Dict[str, str]:
     """Load json file containing algorithm's custom data and add them to config.
 
     Args:
@@ -85,7 +85,7 @@ def _ocean_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
-def parse_training_args(args_str: Optional[list[str]] = None) -> TrainingConfig:
+def parse_training_args(args_str: Optional[List[str]] = None) -> TrainingConfig:
     """Parse and partially validate arguments form command line.
     Arguments are parsed from string args_str or command line if args_str is None
 
@@ -162,7 +162,7 @@ def parse_training_args(args_str: Optional[list[str]] = None) -> TrainingConfig:
     return cast(TrainingConfig, args)
 
 
-def parse_aggregation_args(args_str: Optional[list[str]] = None) -> AggregationConfig:
+def parse_aggregation_args(args_str: Optional[List[str]] = None) -> AggregationConfig:
     """Parse and partially validate arguments form command line.
     Arguments are parsed from string args_str or command line if args_str is None
 
@@ -191,7 +191,7 @@ def parse_aggregation_args(args_str: Optional[list[str]] = None) -> AggregationC
     )
     parser.add_argument(
         "--download_models",
-        help="If true (flag included), models will be donwloaded from provided URLs",
+        help="If true (flag included), models will be downloaded from provided URLs",
         action="store_true",
         default=False,
     )
@@ -199,7 +199,7 @@ def parse_aggregation_args(args_str: Optional[list[str]] = None) -> AggregationC
     parser.add_argument(
         "--public_key",
         type=str,
-        help="Public key used for encrypting final model for scientis.",
+        help="Public key used for encrypting final model for scientist.",
         default=None,
     )
     args = parser.parse_args(args_str)

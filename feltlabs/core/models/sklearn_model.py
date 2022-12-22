@@ -1,11 +1,11 @@
 """Module for handling sklearn models."""
-from typing import Any
+from typing import Any, Dict, List
 
 import numpy as np
 from numpy.typing import NDArray
 from sklearn import linear_model, neighbors, neural_network, preprocessing
 
-from feltlabs.core.models.base_model import BaseModel
+from feltlabs.core.models.base_model import AvgModel
 
 # TODO: SVM attributes  ["dual_coef_", "support_", "support_vectors_", "_n_support"
 # Attributes and data type casting for them (done only after removing randomness)
@@ -48,13 +48,13 @@ SUPPORTED_MODELS = {
 }
 
 
-class Model(BaseModel):
+class Model(AvgModel):
     """Model class for scikit-learn models implementing BaseModel."""
 
     model_type: str = "sklearn"
 
     def __init__(self, data: dict):
-        """Initialize model calss from data dictionary.
+        """Initialize model class from data dictionary.
 
         Args
             data: model loaded from JSON as dict
@@ -74,7 +74,7 @@ class Model(BaseModel):
         self.sample_size = data.get("sample_size", self.sample_size)
 
         if self.is_dirty:
-            # Substract random models (generated from seeds) from loaded model
+            # Subtract random models (generated from seeds) from loaded model
             self.remove_noise_models(data.get("seeds", []))
         else:
             self._init_post_clean()
@@ -108,7 +108,7 @@ class Model(BaseModel):
             "sample_size": self.sample_size,
         }
 
-    def remove_noise_models(self, seeds: list[int]) -> None:
+    def remove_noise_models(self, seeds: List[int]) -> None:
         """Remove generate and remove random models from current model based on seeds.
 
         Args:
@@ -135,7 +135,7 @@ class Model(BaseModel):
 
     def _get_params(
         self, attributes: list = list(ATTRIBUTE_LIST)
-    ) -> dict[str, NDArray]:
+    ) -> Dict[str, NDArray]:
         """Get dictionary of model parameters.
 
         Args:
@@ -150,7 +150,7 @@ class Model(BaseModel):
                 params[p] = getattr(self.model, p)
         return params
 
-    def _set_params(self, params: dict[str, NDArray], type_cast: bool = False) -> None:
+    def _set_params(self, params: Dict[str, NDArray], type_cast: bool = False) -> None:
         """Set values of model parameters.
 
         Args:
@@ -162,7 +162,7 @@ class Model(BaseModel):
                 value = ATTRIBUTE_LIST[param](value)
             setattr(self.model, param, value)
 
-    def _aggregate(self, models: list[BaseModel]) -> None:
+    def _aggregate(self, models: List[AvgModel]) -> None:
         """Aggregation function on self + list of models.
 
         Args:

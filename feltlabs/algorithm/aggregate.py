@@ -1,5 +1,5 @@
 """Module for aggregating outputs of local training."""
-from typing import Optional
+from typing import List, Optional
 
 from feltlabs.config import AggregationConfig, parse_aggregation_args
 from feltlabs.core.data import load_models
@@ -8,11 +8,11 @@ from feltlabs.core.storage import encrypt_model
 
 
 def main(
-    args_str: Optional[list[str]] = None,
+    args_str: Optional[List[str]] = None,
     config: Optional[AggregationConfig] = None,
     output_name: str = "model",
 ):
-    """Main function for exectuting from command line.
+    """Main function for executing from command line.
 
     Args:
         args_str: list with string arguments or None if using command line

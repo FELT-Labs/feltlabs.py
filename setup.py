@@ -101,7 +101,7 @@ requirements = parse_requirements(PATH / "requirements.txt")
 
 setup(
     name="feltlabs",
-    version="0.4.3",
+    version="0.4.4",
     packages=find_packages(),
     maintainer="FELT Labs",
     maintainer_email="info@bretahajek.com",
@@ -119,7 +119,7 @@ setup(
     license="GPL-3.0 License",
     classifiers=[_f for _f in CLASSIFIERS.split("\n") if _f],
     platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
-    python_requires=">=3.9",
+    python_requires=">=3.8",
     install_requires=requirements,
     zip_safe=False,
     entry_points={

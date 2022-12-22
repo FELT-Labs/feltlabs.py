@@ -1,12 +1,13 @@
 """Module for handling analytics models."""
+import copy
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any, Callable, Dict, List, Union
 
 import numpy as np
 from numpy.typing import NDArray
 
 from feltlabs.core import randomness
-from feltlabs.core.models.base_model import BaseModel
+from feltlabs.core.models.base_model import AvgModel, BaseModel
 
 
 @dataclass
@@ -74,16 +75,16 @@ SUPPORTED_MODELS = {
 }
 
 
-class Model(BaseModel):
-    """Model class for scikit-learn models implementing BaseModel."""
+class SingleModel(AvgModel):
+    """Model class for calculating single statistic implementing BaseModel."""
 
     model_type: str = "analytics"
-    model: dict[str, NDArray] = {
+    model: Dict[str, NDArray] = {
         "value": np.array([0]),
     }
 
     def __init__(self, data: dict):
-        """Initialize model calss from data dictionary.
+        """Initialize model class from data dictionary.
 
         Args
             data: model loaded from JSON as dict
@@ -100,7 +101,7 @@ class Model(BaseModel):
 
         self.sample_size = data.get("sample_size", self.sample_size)
         if self.is_dirty:
-            # Substract random models (generated from seeds) from loaded model
+            # Subtract random models (generated from seeds) from loaded model
             self.remove_noise_models(data.get("seeds", []))
 
     def _export_data(self) -> dict:
@@ -118,8 +119,8 @@ class Model(BaseModel):
         }
 
     def get_random_models(
-        self, seeds: list[int], _min: int = -100, _max: int = 100
-    ) -> list[BaseModel]:
+        self, seeds: List[int], _min: int = -100, _max: int = 100
+    ) -> List[AvgModel]:
         """Generate models with random parameters.
 
         Args:
@@ -132,7 +133,7 @@ class Model(BaseModel):
         """
         assert len(seeds) == len(
             self.sample_size
-        ), f"Can't generate random models. Num seeds ({len(seeds)}) and sizes ({len(self.sample_size)}) missmatch."
+        ), f"Can't generate random models. Num seeds ({len(seeds)}) and sizes ({len(self.sample_size)}) mismatch."
 
         models = []
         for seed, size in zip(seeds, self.sample_size):
@@ -148,7 +149,7 @@ class Model(BaseModel):
             models.append(self.new_model(new_params))
         return models
 
-    def remove_noise_models(self, seeds: list[int]) -> None:
+    def remove_noise_models(self, seeds: List[int]) -> None:
         """Remove generate and remove random models from current model based on seeds.
 
         Args:
@@ -167,7 +168,7 @@ class Model(BaseModel):
         self.sample_size = [sum(self.sample_size)]
         self.is_dirty = False
 
-    def _get_params(self) -> dict[str, NDArray]:
+    def _get_params(self) -> Dict[str, NDArray]:
         """Get dictionary of model parameters.
 
         Returns:
@@ -175,7 +176,7 @@ class Model(BaseModel):
         """
         return self.model
 
-    def _set_params(self, params: dict[str, NDArray]) -> None:
+    def _set_params(self, params: Dict[str, NDArray]) -> None:
         """Set values of model parameters.
 
         Args:
@@ -183,7 +184,7 @@ class Model(BaseModel):
         """
         self.model = {**self.model, **params}
 
-    def _aggregate(self, models: list[BaseModel]) -> None:
+    def _aggregate(self, models: List[AvgModel]) -> None:
         """Aggregation function on self + list of models.
 
         Args:
@@ -198,7 +199,7 @@ class Model(BaseModel):
 
         Args:
             X: array like training data of shape (n_samples, n_features)
-            y: array like target values of shapre (n_samples,)
+            y: array like target values of shape (n_samples,)
         """
         self.model["value"] = self.metric.fit_fn(y)
 
@@ -206,9 +207,83 @@ class Model(BaseModel):
         """Use mode for prediction on given data.
 
         Args:
-            X: array like data used for prediciton of shape (n_samples, n_features)
+            X: array like data used for prediction of shape (n_samples, n_features)
         """
         print(
             f"{self.model_name} value is {self.metric.output_fn(self.model['value'], self.sample_size)}"
         )
         return self.metric.output_fn(self.model["value"], self.sample_size)
+
+
+class Model(BaseModel):
+    """Model class for single or multiple analytics."""
+
+    model_type: str = "analytics"
+    models = []
+
+    def __init__(self, data: Union[dict, list]):
+        """Initialize model class from data dictionary.
+
+        Args
+            data: model loaded from JSON as dict
+        """
+        data = data if isinstance(data, list) else [data]
+        self.models = [SingleModel(d) for d in data]
+
+    def _export_data(self) -> Union[dict, list]:
+        """Get model data as dictionary for storing (and loading) model.
+
+        Returns:
+            dictionary containing model data which should be stored
+        """
+        if len(self.models) == 1:
+            return self.models[0]._export_data()
+        return [model._export_data() for model in self.models]
+
+    def add_noise(self, seed: int) -> None:
+        """Add pseudo random noise to the model.
+
+        Args:
+            seed: randomness seed to generate pseudo random model
+        """
+        # TODO: increment seed for each model (seed + i), need extra remove
+        for model in self.models:
+            model.add_noise(seed)
+
+    def remove_noise_models(self, seeds: List[int]) -> None:
+        """Remove generate and remove random models from current model based on seeds.
+
+        Args:
+            seeds: list of seeds used for generating random models
+        """
+        for model in self.models:
+            model.remove_noise_models(seeds)
+
+    def aggregate(self, models: List["Model"]) -> None:
+        """Wrapper around aggregation function
+
+        Args:
+            models: list of models
+        """
+        for model, *other_models in zip(self.models, *[m.models for m in models]):
+            model.aggregate(other_models)
+
+    def fit(self, X: Any, y: Any) -> None:
+        """Fit model on given data.
+
+        Args:
+            X: array like training data of shape (n_samples, n_features)
+            y: array like target values of shape (n_samples,)
+        """
+        for model in self.models:
+            model.fit(X, y)
+
+    def predict(self, X: Any) -> Any:
+        """Use mode for prediction on given data.
+
+        Args:
+            X: array like data used for prediction of shape (n_samples, n_features)
+        """
+        if len(self.models) == 1:
+            return self.models[0].predict(X)
+        return [model.predict(X) for model in self.models]
