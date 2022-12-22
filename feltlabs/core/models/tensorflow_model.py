@@ -9,7 +9,7 @@ import tensorflow as tf
 from numpy.typing import NDArray
 
 from feltlabs.core.json_handler import json_load
-from feltlabs.core.models.base_model import BaseModel
+from feltlabs.core.models.base_model import AvgModel
 from feltlabs.core.models.tensorflow.cnn_network import get_cnn_network
 
 # TODO: Handle different array types
@@ -23,7 +23,7 @@ SUPPORTED_MODELS = {
 }
 
 
-class Model(BaseModel):
+class Model(AvgModel):
     """Model class for tensorflow models implementing BaseModel."""
 
     # TODO: Document model parameters
@@ -78,7 +78,7 @@ class Model(BaseModel):
             "sample_size": self.sample_size,
         }
 
-    def new_model(self, params: dict[str, NDArray] = {}) -> "BaseModel":
+    def new_model(self, params: dict[str, NDArray] = {}) -> "AvgModel":
         """Create copy of model and set new parameters.
 
         Args:
@@ -133,7 +133,7 @@ class Model(BaseModel):
         weights = [params[i] for i in sorted_keys]
         self.model.set_weights(weights)
 
-    def _aggregate(self, models: list[BaseModel]) -> None:
+    def _aggregate(self, models: list[AvgModel]) -> None:
         """Aggregation function on self + list of models.
 
         Args:

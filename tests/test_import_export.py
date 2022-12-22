@@ -70,5 +70,6 @@ def test_analytics_import_export(tmp_path: Path):
 
     im_model = load_model(file_path)
 
-    assert im_model.__dict__ == model.__dict__
+    im_model = cast(analytics_model.Model, im_model)
+    assert im_model.models[0].__dict__ == model.models[0].__dict__
     assert np.array_equal(im_model.predict(X), model.predict(X))

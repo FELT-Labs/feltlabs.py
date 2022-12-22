@@ -10,13 +10,13 @@ y = [[0, 1, 2], [1, 2, 3], [0, 2, 4]]
 def test_analytics_sum_aggregation():
     model_data = {"model_type": "analytics", "model_name": "Sum"}
 
-    model1 = analytics_model.Model(model_data)
+    model1 = analytics_model.SingleModel(model_data)
     model1.fit(X, y[0])
 
-    model2 = analytics_model.Model(model_data)
+    model2 = analytics_model.SingleModel(model_data)
     model2.fit(X, y[1])
 
-    model3 = analytics_model.Model(model_data)
+    model3 = analytics_model.SingleModel(model_data)
     model3.fit(X, y[2])
 
     assert np.allclose(model1.predict(X), sum(y[0]))
@@ -51,13 +51,13 @@ def test_analytics_sum_aggregation():
 def test_analytics_mean_aggregation():
     model_data = {"model_type": "analytics", "model_name": "Mean"}
 
-    model1 = analytics_model.Model(model_data)
+    model1 = analytics_model.SingleModel(model_data)
     model1.fit(X, y[0])
 
-    model2 = analytics_model.Model(model_data)
+    model2 = analytics_model.SingleModel(model_data)
     model2.fit(X, y[1])
 
-    model3 = analytics_model.Model(model_data)
+    model3 = analytics_model.SingleModel(model_data)
     model3.fit(X, y[2])
 
     assert np.allclose(model1.predict(X), np.mean(y[0]))
@@ -92,13 +92,13 @@ def test_analytics_mean_aggregation():
 def test_analytics_variance_aggregation():
     model_data = {"model_type": "analytics", "model_name": "Variance"}
 
-    model1 = analytics_model.Model(model_data)
+    model1 = analytics_model.SingleModel(model_data)
     model1.fit(X, y[0])
 
-    model2 = analytics_model.Model(model_data)
+    model2 = analytics_model.SingleModel(model_data)
     model2.fit(X, y[1])
 
-    model3 = analytics_model.Model(model_data)
+    model3 = analytics_model.SingleModel(model_data)
     model3.fit(X, y[2])
 
     assert np.allclose(model1.predict(X), np.var(y[0]))
@@ -133,13 +133,13 @@ def test_analytics_variance_aggregation():
 def test_analytics_std_aggregation():
     model_data = {"model_type": "analytics", "model_name": "Std"}
 
-    model1 = analytics_model.Model(model_data)
+    model1 = analytics_model.SingleModel(model_data)
     model1.fit(X, y[0])
 
-    model2 = analytics_model.Model(model_data)
+    model2 = analytics_model.SingleModel(model_data)
     model2.fit(X, y[1])
 
-    model3 = analytics_model.Model(model_data)
+    model3 = analytics_model.SingleModel(model_data)
     model3.fit(X, y[2])
 
     assert np.allclose(model1.predict(X), np.std(y[0]))

@@ -12,7 +12,7 @@ def main(
     config: Optional[TrainingConfig] = None,
     output_name: str = "model",
 ):
-    """Main function for exectuting from command line.
+    """Main function for executing from command line.
 
     Args:
         args_str: list with string arguments or None if using command line

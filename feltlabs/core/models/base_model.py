@@ -23,11 +23,6 @@ class BaseModel(ABC):
     sample_size: list[int] = [0]
     is_dirty: bool  # True if randomness was added
 
-    ops = {
-        "sum_op": lambda x, _: np.sum(x, axis=0),
-        "mean_op": lambda x, _: np.mean(x, axis=0),
-    }
-
     @abstractmethod
     def __init__(self, data: dict):
         """Initialize model class from data dictionary.
@@ -36,7 +31,97 @@ class BaseModel(ABC):
             data: model loaded from JSON as dict
         """
 
-    def new_model(self, params: dict[str, NDArray] = {}) -> "BaseModel":
+    def export_model(self, filename: Optional[PathType] = None) -> bytes:
+        """Export model to bytes and optionally store it as JSON file.
+
+        Args:
+            filename: path to exported file
+
+        Returns:
+            bytes of JSON file
+        """
+        data = self._export_data()
+        data_bytes = json_dump(data)
+        if filename:
+            with open(filename, "wb") as f:
+                f.write(data_bytes)
+
+        return data_bytes
+
+    def _set_seed(self, seed: int, param: str) -> None:
+        """Set randomness seed of given parameter.
+
+        Args:
+            seed: seed provided for the whole training
+            param: parameter for which we are setting the seed
+        """
+        seed = int(
+            hashlib.sha256(bytes(f"{seed};{param}", "utf-8")).hexdigest(), 16
+        ) % (2**32 - 1)
+        randomness.set_seed(seed)
+
+    # TODO: Specify typing for fit and predict
+    @abstractmethod
+    def fit(self, X: Any, y: Any) -> None:
+        """Wrapper around model fitting.
+
+        Args:
+            X: array like training data of shape (n_samples, n_features)
+            y: array like target values of shape (n_samples,)
+        """
+
+    @abstractmethod
+    def aggregate(self, models: list["BaseModel"]) -> None:
+        """Wrapper around aggregation function
+
+        Args:
+            models: list of models
+        """
+
+    @abstractmethod
+    def predict(self, X: Any) -> Any:
+        """Use mode for prediction on given data.
+
+        Args:
+            X: array like data used for prediction of shape (n_samples, n_features)
+        """
+
+    @abstractmethod
+    def add_noise(self, seed: int) -> None:
+        """Add pseudo random noise to the model.
+
+        Args:
+            seed: randomness seed to generate pseudo random model
+        """
+
+    @abstractmethod
+    def remove_noise_models(self, seeds: list[int]) -> None:
+        """Remove generate and remove random models from current model based on seeds.
+
+        Args:
+            seeds: list of seeds used for generating random models
+        """
+
+    @abstractmethod
+    def _export_data(self) -> dict:
+        """Get model data as dictionary for storing (and loading) model.
+
+        Returns:
+            dictionary containing model data which should be stored
+        """
+
+
+class AvgModel(BaseModel):
+    """Model based on Based Model necessary for basic averaging federated learning.
+    Most of the models should subclass from this model.
+    """
+
+    ops = {
+        "sum_op": lambda x, _: np.sum(x, axis=0),
+        "mean_op": lambda x, _: np.mean(x, axis=0),
+    }
+
+    def new_model(self, params: dict[str, NDArray] = {}) -> "AvgModel":
         """Create copy of model and set new parameters.
 
         Args:
@@ -59,7 +144,7 @@ class BaseModel(ABC):
 
     def get_random_models(
         self, seeds: list[int], _min: int = -100, _max: int = 100
-    ) -> list["BaseModel"]:
+    ) -> list["AvgModel"]:
         """Generate models with random parameters.
 
         Args:
@@ -103,7 +188,7 @@ class BaseModel(ABC):
         self.sample_size = [len(y)]
         self._fit(X, y)
 
-    def aggregate(self, models: list["BaseModel"]) -> None:
+    def aggregate(self, models: list["AvgModel"]) -> None:
         """Wrapper around aggregation function
 
         Args:
@@ -129,19 +214,7 @@ class BaseModel(ABC):
 
         return data_bytes
 
-    def _set_seed(self, seed: int, param: str) -> None:
-        """Set randomness seed of given parameter.
-
-        Args:
-            seed: seed provided for the whole training
-            param: parameter for which we are setting the seed
-        """
-        seed = int(
-            hashlib.sha256(bytes(f"{seed};{param}", "utf-8")).hexdigest(), 16
-        ) % (2**32 - 1)
-        randomness.set_seed(seed)
-
-    def _agg_models_op(self, op: Callable, models: list["BaseModel"]) -> None:
+    def _agg_models_op(self, op: Callable, models: list["AvgModel"]) -> None:
         """Perform aggregation operation on list of models.
 
         Args:
@@ -174,7 +247,7 @@ class BaseModel(ABC):
         self._set_params(new_params)
 
     @abstractmethod
-    def _aggregate(self, models: list["BaseModel"]) -> None:
+    def _aggregate(self, models: list["AvgModel"]) -> None:
         """Aggregation function on self + list of models, specific for given model.
 
         Args:
@@ -191,22 +264,6 @@ class BaseModel(ABC):
         """
 
     @abstractmethod
-    def _export_data(self) -> dict:
-        """Get model data as dictionary for storing (and loading) model.
-
-        Returns:
-            dictionary containing model data which should be stored
-        """
-
-    @abstractmethod
-    def remove_noise_models(self, seeds: list[int]) -> None:
-        """Remove generate and remove random models from current model based on seeds.
-
-        Args:
-            seeds: list of seeds used for generating random models
-        """
-
-    @abstractmethod
     def _get_params(self) -> dict[str, NDArray]:
         """Get dictionary of model parameters.
 
@@ -220,12 +277,4 @@ class BaseModel(ABC):
 
         Args:
             params: dictionary mapping from name of param to numpy array
-        """
-
-    @abstractmethod
-    def predict(self, X: Any) -> Any:
-        """Use mode for prediction on given data.
-
-        Args:
-            X: array like data used for prediction of shape (n_samples, n_features)
         """
