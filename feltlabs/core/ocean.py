@@ -1,6 +1,7 @@
 """Function specific for Ocean's compute-to-data environment."""
 import json
 from pathlib import Path
+from typing import Dict, List, Tuple
 
 from feltlabs.config import OceanConfig
 
@@ -10,10 +11,10 @@ class DatasetConfig:
 
     data_type: str
     load_code: str
-    _files: dict[int, Path]
+    _files: Dict[int, Path]
 
     @property
-    def files(self) -> list[tuple[Path, int]]:
+    def files(self) -> List[Tuple[Path, int]]:
         """Get files as list sorted by index."""
         return sorted(
             [(path, index) for index, path in self._files.items()], key=lambda x: x[1]
@@ -51,7 +52,7 @@ def _is_dataset_config(path: Path) -> bool:
     return False
 
 
-def get_datasets(config: OceanConfig) -> dict[str, DatasetConfig]:
+def get_datasets(config: OceanConfig) -> Dict[str, DatasetConfig]:
     """Get all dataset paths provided in Ocean's compute job environment.
 
     Args:

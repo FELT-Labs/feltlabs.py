@@ -1,5 +1,5 @@
 """Module for executing model training."""
-from typing import Optional
+from typing import List, Optional
 
 from feltlabs.config import TrainingConfig, parse_training_args
 from feltlabs.core.data import load_data
@@ -8,7 +8,7 @@ from feltlabs.core.storage import encrypt_model, load_model
 
 
 def main(
-    args_str: Optional[list[str]] = None,
+    args_str: Optional[List[str]] = None,
     config: Optional[TrainingConfig] = None,
     output_name: str = "model",
 ):

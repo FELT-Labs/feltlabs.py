@@ -1,6 +1,6 @@
 """Module for importing/exporting tensorflow models to json."""
 import os
-from typing import Any, cast
+from typing import Any, Dict, List, cast
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
@@ -78,7 +78,7 @@ class Model(AvgModel):
             "sample_size": self.sample_size,
         }
 
-    def new_model(self, params: dict[str, NDArray] = {}) -> "AvgModel":
+    def new_model(self, params: Dict[str, NDArray] = {}) -> "AvgModel":
         """Create copy of model and set new parameters.
 
         Args:
@@ -88,7 +88,7 @@ class Model(AvgModel):
         new_model._set_params(params)
         return new_model
 
-    def remove_noise_models(self, seeds: list[int]) -> None:
+    def remove_noise_models(self, seeds: List[int]) -> None:
         """Remove generate and remove random models from current model based on seeds.
 
         Args:
@@ -111,16 +111,16 @@ class Model(AvgModel):
         self.sample_size = [sum(self.sample_size)]
         self.is_dirty = False
 
-    def _get_params(self) -> dict[str, NDArray]:
+    def _get_params(self) -> Dict[str, NDArray]:
         """Get dictionary of model parameters.
 
         Returns:
             dictionary of parameters as name to numpy array
         """
-        weights = cast(list[NDArray], self.model.get_weights())
+        weights = cast(List[NDArray], self.model.get_weights())
         return dict(map(lambda x: (str(x[0]), x[1]), enumerate(weights)))
 
-    def _set_params(self, params: dict[str, NDArray]) -> None:
+    def _set_params(self, params: Dict[str, NDArray]) -> None:
         """Set values of model parameters.
 
         Args:
@@ -133,7 +133,7 @@ class Model(AvgModel):
         weights = [params[i] for i in sorted_keys]
         self.model.set_weights(weights)
 
-    def _aggregate(self, models: list[AvgModel]) -> None:
+    def _aggregate(self, models: List[AvgModel]) -> None:
         """Aggregation function on self + list of models.
 
         Args:

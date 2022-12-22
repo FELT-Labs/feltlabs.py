@@ -2,7 +2,7 @@
 import copy
 import hashlib
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import numpy as np
 from numpy.typing import NDArray
@@ -20,7 +20,7 @@ class BaseModel(ABC):
 
     model_type: str
     model_name: str
-    sample_size: list[int] = [0]
+    sample_size: List[int] = [0]
     is_dirty: bool  # True if randomness was added
 
     @abstractmethod
@@ -71,7 +71,7 @@ class BaseModel(ABC):
         """
 
     @abstractmethod
-    def aggregate(self, models: list["BaseModel"]) -> None:
+    def aggregate(self, models: List["BaseModel"]) -> None:
         """Wrapper around aggregation function
 
         Args:
@@ -95,7 +95,7 @@ class BaseModel(ABC):
         """
 
     @abstractmethod
-    def remove_noise_models(self, seeds: list[int]) -> None:
+    def remove_noise_models(self, seeds: List[int]) -> None:
         """Remove generate and remove random models from current model based on seeds.
 
         Args:
@@ -121,7 +121,7 @@ class AvgModel(BaseModel):
         "mean_op": lambda x, _: np.mean(x, axis=0),
     }
 
-    def new_model(self, params: dict[str, NDArray] = {}) -> "AvgModel":
+    def new_model(self, params: Dict[str, NDArray] = {}) -> "AvgModel":
         """Create copy of model and set new parameters.
 
         Args:
@@ -143,8 +143,8 @@ class AvgModel(BaseModel):
         self.is_dirty = True
 
     def get_random_models(
-        self, seeds: list[int], _min: int = -100, _max: int = 100
-    ) -> list["AvgModel"]:
+        self, seeds: List[int], _min: int = -100, _max: int = 100
+    ) -> List["AvgModel"]:
         """Generate models with random parameters.
 
         Args:
@@ -188,7 +188,7 @@ class AvgModel(BaseModel):
         self.sample_size = [len(y)]
         self._fit(X, y)
 
-    def aggregate(self, models: list["AvgModel"]) -> None:
+    def aggregate(self, models: List["AvgModel"]) -> None:
         """Wrapper around aggregation function
 
         Args:
@@ -214,7 +214,7 @@ class AvgModel(BaseModel):
 
         return data_bytes
 
-    def _agg_models_op(self, op: Callable, models: list["AvgModel"]) -> None:
+    def _agg_models_op(self, op: Callable, models: List["AvgModel"]) -> None:
         """Perform aggregation operation on list of models.
 
         Args:
@@ -247,7 +247,7 @@ class AvgModel(BaseModel):
         self._set_params(new_params)
 
     @abstractmethod
-    def _aggregate(self, models: list["AvgModel"]) -> None:
+    def _aggregate(self, models: List["AvgModel"]) -> None:
         """Aggregation function on self + list of models, specific for given model.
 
         Args:
@@ -264,7 +264,7 @@ class AvgModel(BaseModel):
         """
 
     @abstractmethod
-    def _get_params(self) -> dict[str, NDArray]:
+    def _get_params(self) -> Dict[str, NDArray]:
         """Get dictionary of model parameters.
 
         Returns:
@@ -272,7 +272,7 @@ class AvgModel(BaseModel):
         """
 
     @abstractmethod
-    def _set_params(self, params: dict[str, NDArray]) -> None:
+    def _set_params(self, params: Dict[str, NDArray]) -> None:
         """Set values of model parameters.
 
         Args:

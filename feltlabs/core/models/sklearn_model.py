@@ -1,5 +1,5 @@
 """Module for handling sklearn models."""
-from typing import Any
+from typing import Any, Dict, List
 
 import numpy as np
 from numpy.typing import NDArray
@@ -108,7 +108,7 @@ class Model(AvgModel):
             "sample_size": self.sample_size,
         }
 
-    def remove_noise_models(self, seeds: list[int]) -> None:
+    def remove_noise_models(self, seeds: List[int]) -> None:
         """Remove generate and remove random models from current model based on seeds.
 
         Args:
@@ -135,7 +135,7 @@ class Model(AvgModel):
 
     def _get_params(
         self, attributes: list = list(ATTRIBUTE_LIST)
-    ) -> dict[str, NDArray]:
+    ) -> Dict[str, NDArray]:
         """Get dictionary of model parameters.
 
         Args:
@@ -150,7 +150,7 @@ class Model(AvgModel):
                 params[p] = getattr(self.model, p)
         return params
 
-    def _set_params(self, params: dict[str, NDArray], type_cast: bool = False) -> None:
+    def _set_params(self, params: Dict[str, NDArray], type_cast: bool = False) -> None:
         """Set values of model parameters.
 
         Args:
@@ -162,7 +162,7 @@ class Model(AvgModel):
                 value = ATTRIBUTE_LIST[param](value)
             setattr(self.model, param, value)
 
-    def _aggregate(self, models: list[AvgModel]) -> None:
+    def _aggregate(self, models: List[AvgModel]) -> None:
         """Aggregation function on self + list of models.
 
         Args:

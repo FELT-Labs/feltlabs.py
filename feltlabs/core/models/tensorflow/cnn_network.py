@@ -1,4 +1,5 @@
 import re
+from typing import Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -38,7 +39,7 @@ def _get_cnn(layer, cnn):
 
 
 def get_cnn_network(
-    architecture: str, input_shape: tuple[int, int, int], classes: int
+    architecture: str, input_shape: Tuple[int, int, int], classes: int
 ) -> tf.keras.Model:
     """Create CNN network based on specified architecture,
 

@@ -1,7 +1,7 @@
 """Module for handling analytics models."""
 import copy
 from dataclasses import dataclass
-from typing import Any, Callable, Union
+from typing import Any, Callable, Dict, List, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -79,7 +79,7 @@ class SingleModel(AvgModel):
     """Model class for calculating single statistic implementing BaseModel."""
 
     model_type: str = "analytics"
-    model: dict[str, NDArray] = {
+    model: Dict[str, NDArray] = {
         "value": np.array([0]),
     }
 
@@ -119,8 +119,8 @@ class SingleModel(AvgModel):
         }
 
     def get_random_models(
-        self, seeds: list[int], _min: int = -100, _max: int = 100
-    ) -> list[AvgModel]:
+        self, seeds: List[int], _min: int = -100, _max: int = 100
+    ) -> List[AvgModel]:
         """Generate models with random parameters.
 
         Args:
@@ -149,7 +149,7 @@ class SingleModel(AvgModel):
             models.append(self.new_model(new_params))
         return models
 
-    def remove_noise_models(self, seeds: list[int]) -> None:
+    def remove_noise_models(self, seeds: List[int]) -> None:
         """Remove generate and remove random models from current model based on seeds.
 
         Args:
@@ -168,7 +168,7 @@ class SingleModel(AvgModel):
         self.sample_size = [sum(self.sample_size)]
         self.is_dirty = False
 
-    def _get_params(self) -> dict[str, NDArray]:
+    def _get_params(self) -> Dict[str, NDArray]:
         """Get dictionary of model parameters.
 
         Returns:
@@ -176,7 +176,7 @@ class SingleModel(AvgModel):
         """
         return self.model
 
-    def _set_params(self, params: dict[str, NDArray]) -> None:
+    def _set_params(self, params: Dict[str, NDArray]) -> None:
         """Set values of model parameters.
 
         Args:
@@ -184,7 +184,7 @@ class SingleModel(AvgModel):
         """
         self.model = {**self.model, **params}
 
-    def _aggregate(self, models: list[AvgModel]) -> None:
+    def _aggregate(self, models: List[AvgModel]) -> None:
         """Aggregation function on self + list of models.
 
         Args:
@@ -250,7 +250,7 @@ class Model(BaseModel):
         for model in self.models:
             model.add_noise(seed)
 
-    def remove_noise_models(self, seeds: list[int]) -> None:
+    def remove_noise_models(self, seeds: List[int]) -> None:
         """Remove generate and remove random models from current model based on seeds.
 
         Args:
@@ -259,7 +259,7 @@ class Model(BaseModel):
         for model in self.models:
             model.remove_noise_models(seeds)
 
-    def aggregate(self, models: list["Model"]) -> None:
+    def aggregate(self, models: List["Model"]) -> None:
         """Wrapper around aggregation function
 
         Args:

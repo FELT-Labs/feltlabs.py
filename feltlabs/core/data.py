@@ -3,7 +3,7 @@ import csv
 import json
 import pickle
 from pathlib import Path
-from typing import Any
+from typing import Any, List, Tuple
 
 import numpy as np
 import requests
@@ -23,7 +23,7 @@ def _has_csv_header(file: Path) -> bool:
 
 
 # TODO: Add model type
-def load_data(config: TrainingConfig) -> tuple[NDArray, NDArray]:
+def load_data(config: TrainingConfig) -> Tuple[NDArray, NDArray]:
     """Load data and return them in (X, y) format."""
     if config.data_type == "test":
         # Demo data for testing
@@ -64,7 +64,7 @@ def load_data(config: TrainingConfig) -> tuple[NDArray, NDArray]:
     return np.concatenate(X, axis=0), np.concatenate(y, axis=0)
 
 
-def load_models(config: AggregationConfig) -> list[Any]:
+def load_models(config: AggregationConfig) -> List[Any]:
     """Load models for aggregation.
     It either download models from urls or load them from input path.
     """
