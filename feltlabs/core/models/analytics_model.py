@@ -216,7 +216,7 @@ class SingleModel(AvgModel):
 
 
 class Model(BaseModel):
-    """Model class for single or multiple analytics."""
+    """Model class for running single or multiple analytics."""
 
     model_type: str = "analytics"
     models = []

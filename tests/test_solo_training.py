@@ -12,8 +12,10 @@ from feltlabs.model import load_model
 # Right now it uses test dataset
 
 model_def = {
-    "model_type": "sklearn",
-    "model_name": "LinearRegression",
+    "model_definition": {
+        "model_type": "sklearn",
+        "model_name": "LinearRegression",
+    }
 }
 
 

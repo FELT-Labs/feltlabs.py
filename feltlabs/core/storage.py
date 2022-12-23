@@ -24,7 +24,7 @@ def load_model(file: Union[FileType, dict], experimental: bool = True) -> BaseMo
     Returns:
         scikit-learn model
     """
-    data = json_load(file)
+    data = json_load(file)["model_definition"]
 
     if data["model_type"] == "sklearn":
         return sklearn_model.Model(data)
