@@ -41,7 +41,7 @@ class BaseModel(ABC):
             bytes of JSON file
         """
         data = self._export_data()
-        data_bytes = json_dump(data)
+        data_bytes = json_dump({"model_definition": data})
         if filename:
             with open(filename, "wb") as f:
                 f.write(data_bytes)
@@ -196,23 +196,6 @@ class AvgModel(BaseModel):
         """
         self.sample_size.extend([m.sample_size[0] for m in models])
         self._aggregate(models)
-
-    def export_model(self, filename: Optional[PathType] = None) -> bytes:
-        """Export model to bytes and optionally store it as JSON file.
-
-        Args:
-            filename: path to exported file
-
-        Returns:
-            bytes of JSON file
-        """
-        data = self._export_data()
-        data_bytes = json_dump(data)
-        if filename:
-            with open(filename, "wb") as f:
-                f.write(data_bytes)
-
-        return data_bytes
 
     def _agg_models_op(self, op: Callable, models: List["AvgModel"]) -> None:
         """Perform aggregation operation on list of models.

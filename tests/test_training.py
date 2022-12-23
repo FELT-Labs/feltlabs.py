@@ -17,8 +17,10 @@ aggregation_key = PrivateKey.generate()
 scientist_key = PrivateKey.generate()
 
 model_def = {
-    "model_type": "sklearn",
-    "model_name": "LinearRegression",
+    "model_definition": {
+        "model_type": "sklearn",
+        "model_name": "LinearRegression",
+    }
 }
 
 
