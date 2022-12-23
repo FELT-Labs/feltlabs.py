@@ -26,10 +26,11 @@ def load_model(file: Union[FileType, dict], experimental: bool = True) -> BaseMo
     """
     data = json_load(file)["model_definition"]
 
-    if data["model_type"] == "sklearn":
-        return sklearn_model.Model(data)
-    elif data["model_type"] == "analytics":
+    # Right now only analytics can be list of different models
+    if isinstance(data, list) or data["model_type"] == "analytics":
         return analytics_model.Model(data)
+    elif data["model_type"] == "sklearn":
+        return sklearn_model.Model(data)
     elif data["model_type"] == "tensorflow":
         _is_experimental(experimental)
         return tensorflow_model.Model(data)

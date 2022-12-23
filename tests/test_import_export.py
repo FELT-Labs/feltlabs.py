@@ -73,3 +73,27 @@ def test_analytics_import_export(tmp_path: Path):
     im_model = cast(analytics_model.Model, im_model)
     assert im_model.models[0].__dict__ == model.models[0].__dict__
     assert np.array_equal(im_model.predict(X), model.predict(X))
+
+
+def test_multi_analytics_import_export(tmp_path: Path):
+    model_data = [
+        {"model_type": "analytics", "model_name": "Sum"},
+        {"model_type": "analytics", "model_name": "Mean"},
+    ]
+
+    model = analytics_model.Model(model_data)
+    model.fit(X, y)
+
+    file_path = tmp_path / "model.json"
+
+    model.export_model(file_path)
+    model_bytes = model.export_model()
+
+    with open(file_path, "rb") as f:
+        assert f.read() == model_bytes
+
+    im_model = load_model(file_path)
+
+    im_model = cast(analytics_model.Model, im_model)
+    assert im_model.models[0].__dict__ == model.models[0].__dict__
+    assert np.array_equal(im_model.predict(X), model.predict(X))
