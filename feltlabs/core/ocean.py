@@ -65,7 +65,7 @@ def get_datasets(config: OceanConfig) -> Dict[str, DatasetConfig]:
 
     datasets = {}
     for folder, did in did_folders:
-        datasets = {did: DatasetConfig()}
+        datasets[did] = DatasetConfig()
 
         for path in folder.glob("**/*"):
             if path.is_file() and _is_dataset_config(path):
