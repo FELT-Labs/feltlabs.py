@@ -74,7 +74,12 @@ def load_models(config: AggregationConfig) -> List[Any]:
             conf = json.load(f)
 
         for url in conf["model_urls"]:
-            res = requests.get(url)
+            if isinstance(url, dict):
+                res = requests.get(**url)
+            elif isinstance(url, str):
+                res = requests.get(url)
+            else:
+                raise Exception(f"Invalid model URL (type {type(url)}): {url}")
             data_array.append(res.content)
 
     else:
